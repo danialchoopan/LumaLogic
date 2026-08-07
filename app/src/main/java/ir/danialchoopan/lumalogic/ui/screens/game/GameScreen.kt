@@ -170,7 +170,7 @@ fun GameScreen(
                             }
                         }
 
-                        // Centered 7x7 Grid Container
+                        // Centered Grid Container with Canvas Renderer
                         AnimatedVisibility(
                             visible = true,
                             enter = fadeIn(animationSpec = tween(500)) + scaleIn(initialScale = 0.9f)
@@ -191,19 +191,18 @@ fun GameScreen(
                                     .padding(8.dp),
                                 contentAlignment = Alignment.Center
                             ) {
-                                LazyVerticalGrid(
-                                    columns = GridCells.Fixed(state.level.columns),
-                                    modifier = Modifier.fillMaxSize(),
-                                    horizontalArrangement = Arrangement.Center,
-                                    verticalArrangement = Arrangement.Center
-                                ) {
-                                    items(state.cells, key = { it.id }) { cell ->
-                                        CellComposable(
-                                            cell = cell,
-                                            onClick = { viewModel.onCellClicked(cell.id) }
-                                        )
-                                    }
-                                }
+                                ir.danialchoopan.lumalogic.ui.components.GameCanvas(
+                                    rows = state.level.rows,
+                                    columns = state.level.columns,
+                                    cells = state.cells,
+                                    beamPath = beamPath,
+                                    activatedTargets = gameStatus?.activatedTargets ?: emptySet(),
+                                    onCellClick = { pos ->
+                                        val cell = state.cells.find { it.row == pos.row && it.column == pos.column }
+                                        cell?.let { viewModel.onCellClicked(it.id) }
+                                    },
+                                    modifier = Modifier.fillMaxSize()
+                                )
                             }
                         }
 
