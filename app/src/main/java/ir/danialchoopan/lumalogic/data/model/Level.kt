@@ -12,5 +12,6 @@ data class Level(
     val rows: Int,
     val columns: Int,
     val cells: List<Cell>,
-    val difficulty: String = "Beginner"
+    val difficulty: String = "Beginner",
+    val targetRequirements: List<TargetRequirement> = emptyList()
 )

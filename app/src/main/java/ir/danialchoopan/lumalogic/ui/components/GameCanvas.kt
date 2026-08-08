@@ -9,13 +9,16 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -24,10 +27,12 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.testTag
 import ir.danialchoopan.lumalogic.data.model.Cell
+import ir.danialchoopan.lumalogic.data.model.CellType
 import ir.danialchoopan.lumalogic.data.model.Position
+import ir.danialchoopan.lumalogic.domain.model.BeamSegment
 
 /**
- * GameCanvas component rendering the interactive LumaLogic puzzle grid, cells, and light beam animations.
+ * GameCanvas component rendering the interactive LumaLogic puzzle grid, cells, selection highlights, and light beam animations.
  */
 @Composable
 fun GameCanvas(
@@ -35,13 +40,20 @@ fun GameCanvas(
     columns: Int,
     cells: List<Cell>,
     beamPath: List<Position>,
+    beamSegments: List<BeamSegment> = emptyList(),
     activatedTargets: Set<Position>,
+    selectedPosition: Position? = null,
     onCellClick: (Position) -> Unit,
+    onMoveCell: (Position, Position) -> Unit = { _, _ -> },
+    onInvalidMoveAttempt: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val cellMap = remember(cells) {
         cells.associateBy { Position(it.row, it.column) }
     }
+
+    var dragFromPosition by remember { mutableStateOf<Position?>(null) }
+    var dragHoverPosition by remember { mutableStateOf<Position?>(null) }
 
     // Grid entrance fade-in animation
     val gridAlpha = remember { Animatable(0f) }
@@ -55,8 +67,8 @@ fun GameCanvas(
 
     // Light beam travel animation (1000 ms duration)
     val beamAnimatable = remember { Animatable(0f) }
-    LaunchedEffect(beamPath) {
-        if (beamPath.isNotEmpty()) {
+    LaunchedEffect(beamPath, beamSegments) {
+        if (beamPath.isNotEmpty() || beamSegments.isNotEmpty()) {
             beamAnimatable.snapTo(0f)
             beamAnimatable.animateTo(
                 targetValue = 1f,
@@ -114,6 +126,57 @@ fun GameCanvas(
                         }
                     }
                 }
+                .pointerInput(rows, columns, gridOrigin, cellSize, cellMap) {
+                    detectDragGesturesAfterLongPress(
+                        onDragStart = { startOffset ->
+                            val localX = startOffset.x - gridOrigin.x
+                            val localY = startOffset.y - gridOrigin.y
+
+                            if (localX >= 0 && localX < gridWidth && localY >= 0 && localY < gridHeight) {
+                                val col = (localX / cellSize).toInt().coerceIn(0, columns - 1)
+                                val row = (localY / cellSize).toInt().coerceIn(0, rows - 1)
+                                val pos = Position(row, col)
+                                val cell = cellMap[pos]
+
+                                if (cell != null && isCellMovable(cell)) {
+                                    dragFromPosition = pos
+                                    dragHoverPosition = pos
+                                } else {
+                                    onInvalidMoveAttempt("Sources, Targets, and Blocks cannot be moved")
+                                }
+                            }
+                        },
+                        onDrag = { change, _ ->
+                            change.consume()
+                            val dragFrom = dragFromPosition ?: return@detectDragGesturesAfterLongPress
+                            val currentOffset = change.position
+                            val localX = currentOffset.x - gridOrigin.x
+                            val localY = currentOffset.y - gridOrigin.y
+
+                            if (localX >= 0 && localX < gridWidth && localY >= 0 && localY < gridHeight) {
+                                val col = (localX / cellSize).toInt().coerceIn(0, columns - 1)
+                                val row = (localY / cellSize).toInt().coerceIn(0, rows - 1)
+                                dragHoverPosition = Position(row, col)
+                            } else {
+                                dragHoverPosition = null
+                            }
+                        },
+                        onDragEnd = {
+                            val from = dragFromPosition
+                            val to = dragHoverPosition
+
+                            if (from != null && to != null && from != to) {
+                                onMoveCell(from, to)
+                            }
+                            dragFromPosition = null
+                            dragHoverPosition = null
+                        },
+                        onDragCancel = {
+                            dragFromPosition = null
+                            dragHoverPosition = null
+                        }
+                    )
+                }
         ) {
             val alpha = gridAlpha.value
             if (alpha <= 0f) return@Canvas
@@ -142,7 +205,7 @@ fun GameCanvas(
                         id = "empty_${r}_${c}",
                         row = r,
                         column = c,
-                        type = ir.danialchoopan.lumalogic.data.model.CellType.EMPTY
+                        type = CellType.EMPTY
                     )
 
                     val topLeft = Offset(
@@ -163,15 +226,43 @@ fun GameCanvas(
                 }
             }
 
-            // 3. Render animated light beam on top of cells
-            LightBeam.drawAnimatedBeam(
+            // 3. Render selection and drag highlights
+            SelectionHighlight.drawSelection(
                 drawScope = this,
-                path = beamPath,
-                origin = gridOrigin,
+                selectedPosition = selectedPosition,
+                dragHoverPosition = dragHoverPosition,
+                gridOrigin = gridOrigin,
                 cellSize = cellSize,
-                progress = beamAnimatable.value,
-                beamColor = GameColors.LaserYellow
+                pulseScale = 1f + pulseProgress * 0.1f
             )
+
+            // 4. Render animated light beam on top of cells
+            if (beamSegments.isNotEmpty()) {
+                LightBeam.drawAnimatedSegments(
+                    drawScope = this,
+                    segments = beamSegments,
+                    origin = gridOrigin,
+                    cellSize = cellSize,
+                    progress = beamAnimatable.value
+                )
+            } else {
+                LightBeam.drawAnimatedBeam(
+                    drawScope = this,
+                    path = beamPath,
+                    origin = gridOrigin,
+                    cellSize = cellSize,
+                    progress = beamAnimatable.value,
+                    beamColor = GameColors.LaserYellow
+                )
+            }
         }
+    }
+}
+
+private fun isCellMovable(cell: Cell): Boolean {
+    if (cell.isLocked) return false
+    return when (cell.type) {
+        CellType.MIRROR, CellType.WIRE, CellType.SPLITTER, CellType.FILTER -> true
+        else -> false
     }
 }

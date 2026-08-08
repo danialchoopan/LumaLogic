@@ -8,5 +8,7 @@ enum class StopReason {
     OUT_OF_BOUNDS,
     BLOCKED,
     LOOP_DETECTED,
-    NO_SOURCE
+    NO_SOURCE,
+    FILTER_BLOCKED,
+    MAX_STEPS_REACHED
 }

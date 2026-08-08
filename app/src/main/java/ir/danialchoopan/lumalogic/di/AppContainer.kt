@@ -7,6 +7,9 @@ import ir.danialchoopan.lumalogic.domain.usecase.GetLevelUseCase
 import ir.danialchoopan.lumalogic.domain.usecase.ResetLevelUseCase
 import ir.danialchoopan.lumalogic.domain.usecase.RotateCellUseCase
 
+import ir.danialchoopan.lumalogic.domain.usecase.MoveCellUseCase
+import ir.danialchoopan.lumalogic.domain.usecase.UpdateSimulationUseCase
+
 /**
  * Dependency Injection container providing application-wide singletons and use cases.
  */
@@ -26,6 +29,14 @@ object AppContainer {
 
     val rotateCellUseCase: RotateCellUseCase by lazy {
         RotateCellUseCase(gameEngine)
+    }
+
+    val moveCellUseCase: MoveCellUseCase by lazy {
+        MoveCellUseCase(gameEngine)
+    }
+
+    val updateSimulationUseCase: UpdateSimulationUseCase by lazy {
+        UpdateSimulationUseCase(gameEngine)
     }
 
     val resetLevelUseCase: ResetLevelUseCase by lazy {

@@ -18,25 +18,25 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -48,7 +48,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import ir.danialchoopan.lumalogic.ui.components.CellComposable
+import ir.danialchoopan.lumalogic.ui.components.GameCanvas
 import ir.danialchoopan.lumalogic.ui.components.GlowingCard
 import ir.danialchoopan.lumalogic.ui.components.LumaHeader
 import ir.danialchoopan.lumalogic.ui.theme.AmberPrimary
@@ -65,6 +65,18 @@ fun GameScreen(
     val uiState by viewModel.uiState.collectAsState()
     val gameStatus by viewModel.gameStatus.collectAsState()
     val beamPath by viewModel.beamPath.collectAsState()
+    val beamSegments by viewModel.beamSegments.collectAsState()
+    val selectedCell by viewModel.selectedCell.collectAsState()
+    val userMessage by viewModel.userMessage.collectAsState()
+
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(userMessage) {
+        userMessage?.let { msg ->
+            snackbarHostState.showSnackbar(msg)
+            viewModel.clearUserMessage()
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -88,12 +100,13 @@ fun GameScreen(
                 }
             )
         },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
             if (uiState is GameUiState.Success) {
                 SleekBottomControlShell(
                     onResetClick = { viewModel.resetSimulation() },
                     onPlayClick = { viewModel.startSimulation() },
-                    onHintClick = { /* Hint placeholder */ }
+                    onHintClick = { viewModel.setUserMessage("Tap to rotate components, long-press & drag to move them!") }
                 )
             }
         },
@@ -161,7 +174,7 @@ fun GameScreen(
                                     )
                                 }
                                 Text(
-                                    text = "TAP CELL TO ROTATE",
+                                    text = "TAP ROTATE | DRAG MOVE",
                                     fontSize = 10.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     letterSpacing = 1.sp,
@@ -191,15 +204,22 @@ fun GameScreen(
                                     .padding(8.dp),
                                 contentAlignment = Alignment.Center
                             ) {
-                                ir.danialchoopan.lumalogic.ui.components.GameCanvas(
+                                GameCanvas(
                                     rows = state.level.rows,
                                     columns = state.level.columns,
                                     cells = state.cells,
                                     beamPath = beamPath,
+                                    beamSegments = beamSegments,
                                     activatedTargets = gameStatus?.activatedTargets ?: emptySet(),
+                                    selectedPosition = selectedCell,
                                     onCellClick = { pos ->
-                                        val cell = state.cells.find { it.row == pos.row && it.column == pos.column }
-                                        cell?.let { viewModel.onCellClicked(it.id) }
+                                        viewModel.selectCell(pos)
+                                    },
+                                    onMoveCell = { from, to ->
+                                        viewModel.moveCell(from, to)
+                                    },
+                                    onInvalidMoveAttempt = { reason ->
+                                        viewModel.setUserMessage(reason)
                                     },
                                     modifier = Modifier.fillMaxSize()
                                 )
@@ -242,7 +262,6 @@ fun GameScreen(
         }
     }
 }
-
 
 @Composable
 private fun HudStatItem(label: String, value: String) {
@@ -357,7 +376,7 @@ private fun SleekCircularButton(
 
 @Composable
 private fun LegendItem(
-    color: androidx.compose.ui.graphics.Color,
+    color: Color,
     label: String
 ) {
     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -374,4 +393,3 @@ private fun LegendItem(
         )
     }
 }
-

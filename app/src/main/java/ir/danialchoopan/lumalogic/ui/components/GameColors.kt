@@ -1,6 +1,7 @@
 package ir.danialchoopan.lumalogic.ui.components
 
 import androidx.compose.ui.graphics.Color
+import ir.danialchoopan.lumalogic.data.model.LightColor
 
 /**
  * Palette of game rendering colors used across Canvas components.
@@ -18,4 +19,14 @@ object GameColors {
     val BeamGlow = Color(0xFFFFF59D)
     val BeamOuter = Color(0x33FFD54F)
     val BeamMiddle = Color(0x66FFD54F)
+
+    fun LightColor?.toComposeColor(): Color {
+        return when (this) {
+            LightColor.RED -> Color(0xFFFF5252)
+            LightColor.BLUE -> Color(0xFF448AFF)
+            LightColor.GREEN -> Color(0xFF69F0AE)
+            LightColor.YELLOW -> Color(0xFFFFD740)
+            LightColor.WHITE, null -> Color.White
+        }
+    }
 }

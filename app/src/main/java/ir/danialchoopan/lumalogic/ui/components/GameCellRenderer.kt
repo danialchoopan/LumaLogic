@@ -12,6 +12,9 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.withTransform
 import ir.danialchoopan.lumalogic.data.model.Cell
 import ir.danialchoopan.lumalogic.data.model.CellType
+import ir.danialchoopan.lumalogic.data.model.GateType
+import ir.danialchoopan.lumalogic.data.model.LightColor
+import ir.danialchoopan.lumalogic.ui.components.GameColors.toComposeColor
 
 /**
  * GameCellRenderer responsible for drawing individual cells onto Jetpack Compose Canvas DrawScope.
@@ -47,28 +50,29 @@ object GameCellRenderer {
             )
 
             // Cell border
+            val borderTint = cell.lightColor.toComposeColor()
             drawRoundRect(
-                color = if (cell.isLit) GameColors.LaserYellow.copy(alpha = 0.4f) else GameColors.GridBorder,
+                color = if (cell.isLit) borderTint.copy(alpha = 0.5f) else GameColors.GridBorder,
                 topLeft = Offset(topLeft.x + padding, topLeft.y + padding),
                 size = Size(tileSize, tileSize),
                 cornerRadius = cornerRadius,
                 style = Stroke(width = if (cell.isLit) 3f else 1.5f)
             )
 
-            // Draw specific component contents with rotation transform if needed
+            // Draw specific component contents with rotation transform
             withTransform({
                 rotate(cell.rotation.degrees, center)
             }) {
                 when (cell.type) {
                     CellType.EMPTY -> drawEmptyTile(this, center, cellSize, cell.isLit)
-                    CellType.SOURCE -> drawSourceTile(this, center, cellSize, cell.isLit)
-                    CellType.TARGET -> drawTargetTile(this, center, cellSize, isActivated, targetPulseProgress)
+                    CellType.SOURCE -> drawSourceTile(this, center, cellSize, cell.isLit, cell.lightColor)
+                    CellType.TARGET -> drawTargetTile(this, center, cellSize, isActivated, targetPulseProgress, cell.requiredColor)
                     CellType.MIRROR -> drawMirrorTile(this, center, cellSize, cell.isLit)
                     CellType.BLOCK -> drawBlockTile(this, topLeft, padding, tileSize, cornerRadius)
                     CellType.WIRE -> drawWireTile(this, center, cellSize, cell.isLit)
                     CellType.SPLITTER -> drawSplitterTile(this, center, cellSize, cell.isLit)
-                    CellType.FILTER -> drawFilterTile(this, center, cellSize, cell.isLit)
-                    CellType.GATE -> drawGateTile(this, center, cellSize, cell.isLit)
+                    CellType.FILTER -> drawFilterTile(this, center, cellSize, cell.isLit, cell.acceptedColor)
+                    CellType.GATE -> drawGateTile(this, center, cellSize, cell.isLit, cell.gateType, cell.lightColor)
                 }
             }
         }
@@ -84,26 +88,34 @@ object GameCellRenderer {
         }
     }
 
-    private fun drawSourceTile(drawScope: DrawScope, center: Offset, cellSize: Float, isLit: Boolean) {
+    private fun drawSourceTile(
+        drawScope: DrawScope,
+        center: Offset,
+        cellSize: Float,
+        isLit: Boolean,
+        lightColor: LightColor?
+    ) {
         val radius = cellSize * 0.28f
+        val colorTint = lightColor.toComposeColor()
+
         with(drawScope) {
             // Outer glow ring
             drawCircle(
-                color = GameColors.LaserYellow.copy(alpha = 0.3f),
+                color = colorTint.copy(alpha = 0.35f),
                 radius = radius * 1.3f,
                 center = center
             )
             // Core source circle
             drawCircle(
                 brush = Brush.radialGradient(
-                    colors = listOf(Color.White, GameColors.LaserYellow),
+                    colors = listOf(Color.White, colorTint),
                     center = center,
                     radius = radius
                 ),
                 radius = radius,
                 center = center
             )
-            // Direction emission nozzle pointing UP (before rotation)
+            // Emission nozzle pointing UP (before rotation)
             val nozzlePath = Path().apply {
                 moveTo(center.x - radius * 0.4f, center.y - radius * 0.5f)
                 lineTo(center.x + radius * 0.4f, center.y - radius * 0.5f)
@@ -112,7 +124,7 @@ object GameCellRenderer {
             }
             drawPath(
                 path = nozzlePath,
-                color = GameColors.LaserYellow
+                color = colorTint
             )
         }
     }
@@ -122,23 +134,25 @@ object GameCellRenderer {
         center: Offset,
         cellSize: Float,
         isActivated: Boolean,
-        pulseProgress: Float
+        pulseProgress: Float,
+        requiredColor: LightColor?
     ) {
         val baseRadius = cellSize * 0.32f
         val pulseScale = if (isActivated) 1f + (pulseProgress * 0.15f) else 1f
-        val targetColor = if (isActivated) GameColors.TargetGreen else GameColors.TargetGreen.copy(alpha = 0.7f)
+        val baseColor = requiredColor.toComposeColor()
+        val targetColor = if (isActivated) GameColors.TargetGreen else baseColor.copy(alpha = 0.85f)
 
         with(drawScope) {
             if (isActivated) {
-                // Pulse halo ring
+                // Halo ring
                 drawCircle(
-                    color = GameColors.TargetGreen.copy(alpha = 0.3f * (1f - pulseProgress)),
+                    color = GameColors.TargetGreen.copy(alpha = 0.35f * (1f - pulseProgress)),
                     radius = baseRadius * (1.2f + pulseProgress * 0.5f),
                     center = center
                 )
             }
 
-            // Outer target ring
+            // Outer ring
             drawCircle(
                 color = targetColor.copy(alpha = 0.25f),
                 radius = baseRadius * pulseScale,
@@ -159,7 +173,7 @@ object GameCellRenderer {
                 style = Stroke(width = 3f)
             )
 
-            // Target bullseye core
+            // Target core
             drawCircle(
                 color = if (isActivated) Color.White else targetColor,
                 radius = baseRadius * 0.25f * pulseScale,
@@ -170,8 +184,6 @@ object GameCellRenderer {
 
     private fun drawMirrorTile(drawScope: DrawScope, center: Offset, cellSize: Float, isLit: Boolean) {
         val mirrorLength = cellSize * 0.65f
-        // Default Rotation.ZERO represents forward mirror / (from bottom-left to top-right in standard math,
-        // or top-right to bottom-left).
         val start = Offset(center.x - mirrorLength / 2f, center.y + mirrorLength / 2f)
         val end = Offset(center.x + mirrorLength / 2f, center.y - mirrorLength / 2f)
 
@@ -207,14 +219,12 @@ object GameCellRenderer {
         cornerRadius: CornerRadius
     ) {
         with(drawScope) {
-            // Dark solid obstacle
             drawRoundRect(
                 color = GameColors.BlockDark,
                 topLeft = Offset(topLeft.x + padding, topLeft.y + padding),
                 size = Size(tileSize, tileSize),
                 cornerRadius = cornerRadius
             )
-            // Diagonal texture lines
             val lineCount = 3
             val step = tileSize / (lineCount + 1)
             for (i in 1..lineCount) {
@@ -242,43 +252,123 @@ object GameCellRenderer {
     }
 
     private fun drawSplitterTile(drawScope: DrawScope, center: Offset, cellSize: Float, isLit: Boolean) {
-        val r = cellSize * 0.25f
+        val r = cellSize * 0.28f
+        val glowColor = Color(0xFF00E5FF)
+
         with(drawScope) {
+            // Splitter central prism
             drawCircle(
-                color = GameColors.BeamGlow.copy(alpha = 0.4f),
-                radius = r,
+                color = glowColor.copy(alpha = if (isLit) 0.35f else 0.15f),
+                radius = r * 1.2f,
                 center = center
             )
             drawCircle(
-                color = Color.Cyan,
+                color = glowColor,
                 radius = r,
                 center = center,
                 style = Stroke(width = 3f)
             )
+
+            // Two glowing output indicators (arrows UP and DOWN before rotation)
+            val arrowUp = Path().apply {
+                moveTo(center.x - r * 0.4f, center.y - r * 0.7f)
+                lineTo(center.x + r * 0.4f, center.y - r * 0.7f)
+                lineTo(center.x, center.y - r * 1.3f)
+                close()
+            }
+            val arrowDown = Path().apply {
+                moveTo(center.x - r * 0.4f, center.y + r * 0.7f)
+                lineTo(center.x + r * 0.4f, center.y + r * 0.7f)
+                lineTo(center.x, center.y + r * 1.3f)
+                close()
+            }
+
+            drawPath(path = arrowUp, color = glowColor)
+            drawPath(path = arrowDown, color = glowColor)
         }
     }
 
-    private fun drawFilterTile(drawScope: DrawScope, center: Offset, cellSize: Float, isLit: Boolean) {
-        val r = cellSize * 0.22f
+    private fun drawFilterTile(
+        drawScope: DrawScope,
+        center: Offset,
+        cellSize: Float,
+        isLit: Boolean,
+        acceptedColor: LightColor?
+    ) {
+        val filterColor = acceptedColor.toComposeColor()
+        val width = cellSize * 0.55f
+        val height = cellSize * 0.20f
+
         with(drawScope) {
-            drawCircle(
-                color = Color(0xFF9C27B0),
-                radius = r,
-                center = center,
-                style = Stroke(width = 4f)
+            // Glass filter plate centered
+            val rectTopLeft = Offset(center.x - width / 2f, center.y - height / 2f)
+            val rectSize = Size(width, height)
+
+            drawRoundRect(
+                color = filterColor.copy(alpha = if (isLit) 0.6f else 0.35f),
+                topLeft = rectTopLeft,
+                size = rectSize,
+                cornerRadius = CornerRadius(8f, 8f)
+            )
+            drawRoundRect(
+                color = filterColor,
+                topLeft = rectTopLeft,
+                size = rectSize,
+                cornerRadius = CornerRadius(8f, 8f),
+                style = Stroke(width = 3.5f)
+            )
+
+            // Glass sheen reflection
+            drawLine(
+                color = Color.White.copy(alpha = 0.5f),
+                start = Offset(center.x - width * 0.3f, center.y - height * 0.2f),
+                end = Offset(center.x + width * 0.3f, center.y - height * 0.2f),
+                strokeWidth = 2f
             )
         }
     }
 
-    private fun drawGateTile(drawScope: DrawScope, center: Offset, cellSize: Float, isLit: Boolean) {
-        val r = cellSize * 0.22f
+    private fun drawGateTile(
+        drawScope: DrawScope,
+        center: Offset,
+        cellSize: Float,
+        isLit: Boolean,
+        gateType: GateType?,
+        lightColor: LightColor?
+    ) {
+        val gType = gateType ?: GateType.AND
+        val accentColor = lightColor.toComposeColor()
+        val r = cellSize * 0.28f
+
         with(drawScope) {
+            // Gate housing shape
             drawCircle(
-                color = Color(0xFFFF9800),
+                color = accentColor.copy(alpha = if (isLit) 0.35f else 0.15f),
+                radius = r * 1.2f,
+                center = center
+            )
+            drawCircle(
+                color = accentColor,
                 radius = r,
                 center = center,
-                style = Stroke(width = 4f)
+                style = Stroke(width = 3.5f)
             )
+
+            // Input ports visualization
+            when (gType) {
+                GateType.AND, GateType.OR -> {
+                    // Two input ports (LEFT and RIGHT before rotation)
+                    drawCircle(color = accentColor, radius = r * 0.25f, center = Offset(center.x - r * 1.2f, center.y))
+                    drawCircle(color = accentColor, radius = r * 0.25f, center = Offset(center.x + r * 1.2f, center.y))
+                }
+                GateType.NOT -> {
+                    // One input port (BOTTOM before rotation)
+                    drawCircle(color = accentColor, radius = r * 0.25f, center = Offset(center.x, center.y + r * 1.2f))
+                }
+            }
+
+            // Output port (TOP before rotation)
+            drawCircle(color = Color.White, radius = r * 0.3f, center = Offset(center.x, center.y - r * 1.2f))
         }
     }
 }

@@ -10,4 +10,8 @@ class RotateCellUseCase(private val gameEngine: GameEngine) {
     operator fun invoke(cellId: String): List<Cell> {
         return gameEngine.rotateCell(cellId)
     }
+
+    operator fun invoke(position: ir.danialchoopan.lumalogic.data.model.Position): List<Cell> {
+        return gameEngine.rotateCellAt(position)
+    }
 }

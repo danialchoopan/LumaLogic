@@ -54,6 +54,26 @@ data class Position(
 )
 
 /**
+ * Enum representing light colors.
+ */
+enum class LightColor {
+    WHITE,
+    RED,
+    BLUE,
+    GREEN,
+    YELLOW
+}
+
+/**
+ * Enum representing logic gate types.
+ */
+enum class GateType {
+    AND,
+    OR,
+    NOT
+}
+
+/**
  * Immutable representation of a grid cell.
  */
 @JsonClass(generateAdapter = true)
@@ -64,5 +84,10 @@ data class Cell(
     val type: CellType,
     val rotation: Rotation = Rotation.ZERO,
     val isLocked: Boolean = false,
-    val isLit: Boolean = false
+    val isLit: Boolean = false,
+    val lightColor: LightColor? = null,
+    val acceptedColor: LightColor? = null,
+    val requiredColor: LightColor? = null,
+    val gateType: GateType? = null,
+    val isOptionalTarget: Boolean = false
 )
