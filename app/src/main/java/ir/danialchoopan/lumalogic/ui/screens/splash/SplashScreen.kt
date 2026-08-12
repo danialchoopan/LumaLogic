@@ -65,7 +65,7 @@ fun SplashScreen(
             targetValue = 1.0f,
             animationSpec = tween(800)
         )
-        delay(1800)
+        delay(1200)
         onNavigateToHome()
     }
 

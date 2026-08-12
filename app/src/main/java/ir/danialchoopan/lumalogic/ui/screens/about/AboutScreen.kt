@@ -105,7 +105,7 @@ fun AboutScreen(
             AboutInfoCard(
                 icon = Icons.Default.Layers,
                 label = "Version",
-                value = "1.0"
+                value = "1.0.0"
             )
 
             Spacer(modifier = Modifier.weight(1f))

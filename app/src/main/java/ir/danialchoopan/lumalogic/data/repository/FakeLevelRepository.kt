@@ -2,6 +2,7 @@ package ir.danialchoopan.lumalogic.data.repository
 
 import ir.danialchoopan.lumalogic.data.model.Cell
 import ir.danialchoopan.lumalogic.data.model.CellType
+import ir.danialchoopan.lumalogic.data.model.EnergyConfig
 import ir.danialchoopan.lumalogic.data.model.GateType
 import ir.danialchoopan.lumalogic.data.model.Level
 import ir.danialchoopan.lumalogic.data.model.LightColor
@@ -22,7 +23,10 @@ class FakeLevelRepository(
             createLevel002(),
             createLevel003(),
             createLevel004(),
-            createLevel005()
+            createLevel005(),
+            createLevel006(),
+            createLevel007(),
+            createLevel008()
         )
     }
 
@@ -300,6 +304,153 @@ class FakeLevelRepository(
             targetRequirements = listOf(
                 TargetRequirement(position = Position(1, 6), requiredColor = LightColor.RED),
                 TargetRequirement(position = Position(6, 7), requiredColor = LightColor.BLUE)
+            )
+        )
+    }
+
+    // 6. Medium: Multiple Beams
+    private fun createLevel006(): Level {
+        val rows = 6
+        val columns = 6
+        val cells = mutableListOf<Cell>()
+
+        for (r in 0 until rows) {
+            for (c in 0 until columns) {
+                val id = "c_${r}_${c}"
+                val cell = when {
+                    r == 1 && c == 0 -> Cell(
+                        id = id, row = r, column = c, type = CellType.SOURCE,
+                        rotation = Rotation.NINETY, isLocked = true, isLit = true, lightColor = LightColor.RED
+                    )
+                    r == 4 && c == 0 -> Cell(
+                        id = id, row = r, column = c, type = CellType.SOURCE,
+                        rotation = Rotation.NINETY, isLocked = true, isLit = true, lightColor = LightColor.BLUE
+                    )
+                    r == 1 && c == 3 -> Cell(
+                        id = id, row = r, column = c, type = CellType.MIRROR,
+                        rotation = Rotation.ZERO, isLocked = false
+                    )
+                    r == 4 && c == 3 -> Cell(
+                        id = id, row = r, column = c, type = CellType.MIRROR,
+                        rotation = Rotation.ZERO, isLocked = false
+                    )
+                    r == 2 && c == 3 -> Cell(
+                        id = id, row = r, column = c, type = CellType.TARGET,
+                        rotation = Rotation.ZERO, isLocked = true, requiredColor = LightColor.RED
+                    )
+                    r == 5 && c == 3 -> Cell(
+                        id = id, row = r, column = c, type = CellType.TARGET,
+                        rotation = Rotation.ZERO, isLocked = true, requiredColor = LightColor.BLUE
+                    )
+                    else -> Cell(id = id, row = r, column = c, type = CellType.EMPTY)
+                }
+                cells.add(cell)
+            }
+        }
+
+        return Level(
+            levelId = "lumalogic_006",
+            name = "Dual Beams",
+            description = "Route multiple independent light beams to their matching colored targets.",
+            author = "LumaLogic",
+            difficulty = "Medium",
+            rows = rows,
+            columns = columns,
+            cells = cells,
+            targetRequirements = listOf(
+                TargetRequirement(position = Position(2, 3), requiredColor = LightColor.RED),
+                TargetRequirement(position = Position(5, 3), requiredColor = LightColor.BLUE)
+            )
+        )
+    }
+
+    // 7. Medium: Energy Limitation
+    private fun createLevel007(): Level {
+        val rows = 5
+        val columns = 5
+        val cells = mutableListOf<Cell>()
+
+        for (r in 0 until rows) {
+            for (c in 0 until columns) {
+                val id = "c_${r}_${c}"
+                val cell = when {
+                    r == 2 && c == 0 -> Cell(
+                        id = id, row = r, column = c, type = CellType.SOURCE,
+                        rotation = Rotation.NINETY, isLocked = true, isLit = true, lightColor = LightColor.WHITE
+                    )
+                    r == 2 && c == 2 -> Cell(
+                        id = id, row = r, column = c, type = CellType.MIRROR,
+                        rotation = Rotation.ZERO, isLocked = false
+                    )
+                    r == 0 && c == 2 -> Cell(
+                        id = id, row = r, column = c, type = CellType.TARGET,
+                        rotation = Rotation.ZERO, isLocked = true, requiredColor = LightColor.WHITE
+                    )
+                    else -> Cell(id = id, row = r, column = c, type = CellType.EMPTY)
+                }
+                cells.add(cell)
+            }
+        }
+
+        return Level(
+            levelId = "lumalogic_007",
+            name = "Energy Thrift",
+            description = "Route light efficiently without exhausting energy limits.",
+            author = "LumaLogic",
+            difficulty = "Medium",
+            rows = rows,
+            columns = columns,
+            cells = cells,
+            energyConfig = EnergyConfig(maxEnergy = 12, cellTraversalCost = 1, mirrorCost = 2),
+            targetRequirements = listOf(
+                TargetRequirement(position = Position(0, 2), requiredColor = LightColor.WHITE)
+            )
+        )
+    }
+
+    // 8. Hard: Loop Detection
+    private fun createLevel008(): Level {
+        val rows = 5
+        val columns = 5
+        val cells = mutableListOf<Cell>()
+
+        for (r in 0 until rows) {
+            for (c in 0 until columns) {
+                val id = "c_${r}_${c}"
+                val cell = when {
+                    r == 2 && c == 0 -> Cell(
+                        id = id, row = r, column = c, type = CellType.SOURCE,
+                        rotation = Rotation.NINETY, isLocked = true, isLit = true, lightColor = LightColor.WHITE
+                    )
+                    r == 2 && c == 2 -> Cell(
+                        id = id, row = r, column = c, type = CellType.SPLITTER,
+                        rotation = Rotation.ZERO, isLocked = false
+                    )
+                    r == 2 && c == 4 -> Cell(
+                        id = id, row = r, column = c, type = CellType.MIRROR,
+                        rotation = Rotation.TWO_SEVENTY, isLocked = false
+                    )
+                    r == 0 && c == 2 -> Cell(
+                        id = id, row = r, column = c, type = CellType.TARGET,
+                        rotation = Rotation.ZERO, isLocked = true, requiredColor = LightColor.WHITE
+                    )
+                    else -> Cell(id = id, row = r, column = c, type = CellType.EMPTY)
+                }
+                cells.add(cell)
+            }
+        }
+
+        return Level(
+            levelId = "lumalogic_008",
+            name = "Infinity Circuit",
+            description = "Master complex light reflections with automatic loop protection.",
+            author = "LumaLogic",
+            difficulty = "Hard",
+            rows = rows,
+            columns = columns,
+            cells = cells,
+            targetRequirements = listOf(
+                TargetRequirement(position = Position(0, 2), requiredColor = LightColor.WHITE)
             )
         )
     }
