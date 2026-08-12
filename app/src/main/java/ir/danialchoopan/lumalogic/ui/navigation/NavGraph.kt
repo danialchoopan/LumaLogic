@@ -14,6 +14,9 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import ir.danialchoopan.lumalogic.ui.screens.about.AboutScreen
+import ir.danialchoopan.lumalogic.ui.screens.achievements.AchievementsScreen
+import ir.danialchoopan.lumalogic.ui.screens.chapterselect.ChapterSelectScreen
+import ir.danialchoopan.lumalogic.ui.screens.dailypuzzle.DailyPuzzleScreen
 import ir.danialchoopan.lumalogic.ui.screens.debug.DebugScreen
 import ir.danialchoopan.lumalogic.ui.screens.editor.LevelEditorScreen
 import ir.danialchoopan.lumalogic.ui.screens.game.GameScreen
@@ -22,13 +25,19 @@ import ir.danialchoopan.lumalogic.ui.screens.home.HomeScreen
 import ir.danialchoopan.lumalogic.ui.screens.importexport.ExportLevelScreen
 import ir.danialchoopan.lumalogic.ui.screens.importexport.ImportLevelScreen
 import ir.danialchoopan.lumalogic.ui.screens.levelselect.LevelSelectScreen
+import ir.danialchoopan.lumalogic.ui.screens.profile.ProfileScreen
 import ir.danialchoopan.lumalogic.ui.screens.settings.SettingsScreen
 import ir.danialchoopan.lumalogic.ui.screens.splash.SplashScreen
 
 object LumaDestinations {
     const val SPLASH = "splash"
     const val HOME = "home"
+    const val CHAPTER_SELECT = "chapter_select"
     const val LEVEL_SELECT = "level_select"
+    const val CHAPTER_LEVEL_SELECT = "chapter_level_select/{chapterId}"
+    const val DAILY_PUZZLE = "daily_puzzle"
+    const val ACHIEVEMENTS = "achievements"
+    const val PROFILE = "profile"
     const val GAME = "game"
     const val GAME_WITH_ID = "game/{levelId}"
     const val LEVEL_EDITOR = "level_editor"
@@ -84,17 +93,30 @@ fun LumaNavGraph(
 
         composable(LumaDestinations.HOME) {
             HomeScreen(
-                onPlayClick = { navController.navigate(LumaDestinations.LEVEL_SELECT) },
+                onPlayClick = { navController.navigate(LumaDestinations.CHAPTER_SELECT) },
+                onChaptersClick = { navController.navigate(LumaDestinations.CHAPTER_SELECT) },
                 onLevelSelectClick = { navController.navigate(LumaDestinations.LEVEL_SELECT) },
+                onDailyPuzzleClick = { navController.navigate(LumaDestinations.DAILY_PUZZLE) },
+                onAchievementsClick = { navController.navigate(LumaDestinations.ACHIEVEMENTS) },
+                onProfileClick = { navController.navigate(LumaDestinations.PROFILE) },
                 onLevelEditorClick = { navController.navigate(LumaDestinations.LEVEL_EDITOR) },
-                onImportClick = { navController.navigate(LumaDestinations.IMPORT_LEVEL) },
                 onSettingsClick = { navController.navigate(LumaDestinations.SETTINGS) },
                 onAboutClick = { navController.navigate(LumaDestinations.ABOUT) }
             )
         }
 
+        composable(LumaDestinations.CHAPTER_SELECT) {
+            ChapterSelectScreen(
+                onBackClick = { navController.popBackStack() },
+                onChapterSelected = { chapterId ->
+                    navController.navigate("chapter_level_select/$chapterId")
+                }
+            )
+        }
+
         composable(LumaDestinations.LEVEL_SELECT) {
             LevelSelectScreen(
+                chapterId = null,
                 onBackClick = { navController.popBackStack() },
                 onLevelSelected = { levelId ->
                     navController.navigate("game/$levelId")
@@ -115,6 +137,54 @@ fun LumaNavGraph(
         }
 
         composable(
+            route = LumaDestinations.CHAPTER_LEVEL_SELECT,
+            arguments = listOf(navArgument("chapterId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val chapterId = backStackEntry.arguments?.getString("chapterId")
+            LevelSelectScreen(
+                chapterId = chapterId,
+                onBackClick = { navController.popBackStack() },
+                onLevelSelected = { levelId ->
+                    navController.navigate("game/$levelId")
+                },
+                onCreateNewLevel = {
+                    navController.navigate(LumaDestinations.LEVEL_EDITOR)
+                },
+                onEditLevel = { levelId ->
+                    navController.navigate("level_editor/$levelId")
+                },
+                onExportLevel = { levelId ->
+                    navController.navigate("export_level/$levelId")
+                },
+                onImportLevel = {
+                    navController.navigate(LumaDestinations.IMPORT_LEVEL)
+                }
+            )
+        }
+
+        composable(LumaDestinations.DAILY_PUZZLE) {
+            DailyPuzzleScreen(
+                onBackClick = { navController.popBackStack() },
+                onPlayClick = { levelId ->
+                    navController.navigate("game/$levelId")
+                }
+            )
+        }
+
+        composable(LumaDestinations.ACHIEVEMENTS) {
+            AchievementsScreen(
+                onBackClick = { navController.popBackStack() }
+            )
+        }
+
+        composable(LumaDestinations.PROFILE) {
+            ProfileScreen(
+                onBackClick = { navController.popBackStack() },
+                onNavigateToFavorites = { navController.navigate(LumaDestinations.LEVEL_SELECT) }
+            )
+        }
+
+        composable(
             route = LumaDestinations.GAME_WITH_ID,
             arguments = listOf(navArgument("levelId") { type = NavType.StringType })
         ) { backStackEntry ->
@@ -128,7 +198,7 @@ fun LumaNavGraph(
                 onBackClick = { navController.popBackStack() },
                 onNextLevelClick = { nextLevelId ->
                     navController.navigate("game/$nextLevelId") {
-                        popUpTo(LumaDestinations.LEVEL_SELECT)
+                        popUpTo(LumaDestinations.CHAPTER_SELECT)
                     }
                 },
                 onSettingsClick = { navController.navigate(LumaDestinations.SETTINGS) },
@@ -143,7 +213,7 @@ fun LumaNavGraph(
                 onBackClick = { navController.popBackStack() },
                 onNextLevelClick = { nextLevelId ->
                     navController.navigate("game/$nextLevelId") {
-                        popUpTo(LumaDestinations.LEVEL_SELECT)
+                        popUpTo(LumaDestinations.CHAPTER_SELECT)
                     }
                 },
                 onSettingsClick = { navController.navigate(LumaDestinations.SETTINGS) },

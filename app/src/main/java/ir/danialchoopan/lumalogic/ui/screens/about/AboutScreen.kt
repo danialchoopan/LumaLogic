@@ -105,8 +105,30 @@ fun AboutScreen(
             AboutInfoCard(
                 icon = Icons.Default.Layers,
                 label = "Version",
-                value = "1.0.0"
+                value = "1.0.5"
             )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            GlowingCard(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column {
+                    Text(
+                        text = "About LumaLogic",
+                        fontWeight = FontWeight.Bold,
+                        color = AmberPrimary,
+                        fontSize = 16.sp
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = "LumaLogic is a 256-level optical logic puzzle game featuring 16 distinct chapters, dynamic laser beam simulation, RGB color mechanics, logic gates, energy constraints, and an offline-first local progression system.",
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        lineHeight = 18.sp
+                    )
+                }
+            }
 
             Spacer(modifier = Modifier.weight(1f))
 

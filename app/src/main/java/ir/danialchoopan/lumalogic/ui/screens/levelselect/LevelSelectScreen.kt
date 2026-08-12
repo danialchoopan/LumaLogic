@@ -1,12 +1,12 @@
 package ir.danialchoopan.lumalogic.ui.screens.levelselect
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,27 +16,34 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.FileUpload
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Badge
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
@@ -65,9 +72,10 @@ import ir.danialchoopan.lumalogic.ui.components.LumaHeader
 import ir.danialchoopan.lumalogic.ui.theme.AmberPrimary
 import ir.danialchoopan.lumalogic.ui.theme.TargetGreen
 
-@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LevelSelectScreen(
+    chapterId: String? = null,
     onBackClick: () -> Unit,
     onLevelSelected: (String) -> Unit,
     onCreateNewLevel: () -> Unit,
@@ -76,16 +84,33 @@ fun LevelSelectScreen(
     onExportLevel: (String) -> Unit
 ) {
     var selectedTabIndex by remember { mutableIntStateOf(0) }
+    var searchQuery by remember { mutableStateOf("") }
+    var selectedDifficultyFilter by remember { mutableStateOf("ALL") }
+
     var levels by remember { mutableStateOf<List<Level>>(emptyList()) }
     var progressMap by remember { mutableStateOf<Map<String, LevelProgress>>(emptyMap()) }
+    var favoritesSet by remember { mutableStateOf<Set<String>>(emptySet()) }
     var levelToDelete by remember { mutableStateOf<Level?>(null) }
+    var previewLevel by remember { mutableStateOf<Level?>(null) }
 
-    fun refreshLevels() {
-        levels = AppContainer.levelManager.getAllLevels()
-        progressMap = AppContainer.levelProgressManager.getAllProgress().associateBy { it.levelId }
+    val favRepo = remember { AppContainer.favoriteLevelRepository }
+    val chapterRepo = remember { AppContainer.chapterRepository }
+
+    val chapter = remember(chapterId) {
+        if (chapterId != null) chapterRepo.getChapter(chapterId) else null
     }
 
-    LaunchedEffect(Unit) {
+    fun refreshLevels() {
+        levels = if (chapterId != null) {
+            chapterRepo.getLevelsForChapter(chapterId)
+        } else {
+            AppContainer.levelManager.getAllLevels()
+        }
+        progressMap = AppContainer.levelProgressManager.getAllProgress().associateBy { it.levelId }
+        favoritesSet = favRepo.getFavoriteLevelIds()
+    }
+
+    LaunchedEffect(chapterId) {
         refreshLevels()
     }
 
@@ -96,7 +121,7 @@ fun LevelSelectScreen(
     Scaffold(
         topBar = {
             LumaHeader(
-                title = "Select Puzzle Level",
+                title = chapter?.let { "Chapter ${it.number}: ${it.name}" } ?: "Select Puzzle Level",
                 onBackClick = onBackClick,
                 actions = {
                     IconButton(
@@ -120,36 +145,75 @@ fun LevelSelectScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            // Section Tabs
-            PrimaryTabRow(
-                selectedTabIndex = selectedTabIndex,
-                containerColor = MaterialTheme.colorScheme.surface,
-                contentColor = AmberPrimary
+            // Search Box
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                placeholder = { Text("Search levels...") },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = AmberPrimary) },
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = AmberPrimary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.surfaceVariant
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 6.dp)
+                    .testTag("level_search_input")
+            )
+
+            // Difficulty Filter Bar
+            LazyRow(
+                contentPadding = PaddingValues(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Tab(
-                    selected = selectedTabIndex == 0,
-                    onClick = { selectedTabIndex = 0 },
-                    text = { Text("Built-in (${builtInLevels.size})", fontWeight = FontWeight.Bold) },
-                    modifier = Modifier.testTag("tab_builtin_levels")
-                )
-                Tab(
-                    selected = selectedTabIndex == 1,
-                    onClick = { selectedTabIndex = 1 },
-                    text = { Text("My Levels (${userLevels.size})", fontWeight = FontWeight.Bold) },
-                    modifier = Modifier.testTag("tab_user_levels")
-                )
-                Tab(
-                    selected = selectedTabIndex == 2,
-                    onClick = { selectedTabIndex = 2 },
-                    text = { Text("Completed (${completedLevels.size})", fontWeight = FontWeight.Bold) },
-                    modifier = Modifier.testTag("tab_completed_levels")
-                )
+                val filters = listOf("ALL", "FAVORITES", "BEGINNER", "EASY", "NORMAL", "HARD", "EXPERT", "MASTER")
+                items(filters) { filter ->
+                    FilterChip(
+                        selected = selectedDifficultyFilter == filter,
+                        onClick = { selectedDifficultyFilter = filter },
+                        label = { Text(filter, fontSize = 11.sp, fontWeight = FontWeight.Bold) },
+                        modifier = Modifier.testTag("filter_chip_$filter")
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            // Section Tabs
+            if (chapterId == null) {
+                PrimaryTabRow(
+                    selectedTabIndex = selectedTabIndex,
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    contentColor = AmberPrimary
+                ) {
+                    Tab(
+                        selected = selectedTabIndex == 0,
+                        onClick = { selectedTabIndex = 0 },
+                        text = { Text("Built-in (${builtInLevels.size})", fontWeight = FontWeight.Bold) },
+                        modifier = Modifier.testTag("tab_builtin_levels")
+                    )
+                    Tab(
+                        selected = selectedTabIndex == 1,
+                        onClick = { selectedTabIndex = 1 },
+                        text = { Text("My Levels (${userLevels.size})", fontWeight = FontWeight.Bold) },
+                        modifier = Modifier.testTag("tab_user_levels")
+                    )
+                    Tab(
+                        selected = selectedTabIndex == 2,
+                        onClick = { selectedTabIndex = 2 },
+                        text = { Text("Completed (${completedLevels.size})", fontWeight = FontWeight.Bold) },
+                        modifier = Modifier.testTag("tab_completed_levels")
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(8.dp))
 
             // Action Toolbar for Custom Levels
-            if (selectedTabIndex == 1) {
+            if (selectedTabIndex == 1 && chapterId == null) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -175,14 +239,25 @@ fun LevelSelectScreen(
                 }
             }
 
-            // Level List
-            val currentList = when (selectedTabIndex) {
-                0 -> builtInLevels
-                1 -> userLevels
-                else -> completedLevels
+            // Level List Filter
+            val rawList = when {
+                chapterId != null -> levels
+                selectedTabIndex == 1 -> userLevels
+                selectedTabIndex == 2 -> completedLevels
+                else -> builtInLevels
             }
 
-            if (currentList.isEmpty()) {
+            val filteredList = rawList.filter { lvl ->
+                val matchesSearch = searchQuery.isBlank() || lvl.name.contains(searchQuery, ignoreCase = true)
+                val matchesDifficulty = when (selectedDifficultyFilter) {
+                    "ALL" -> true
+                    "FAVORITES" -> favoritesSet.contains(lvl.levelId)
+                    else -> lvl.difficulty.equals(selectedDifficultyFilter, ignoreCase = true)
+                }
+                matchesSearch && matchesDifficulty
+            }
+
+            if (filteredList.isEmpty()) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -190,11 +265,7 @@ fun LevelSelectScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = when (selectedTabIndex) {
-                            1 -> "No custom levels created yet. Tap 'New Level' or 'Import' to create one!"
-                            2 -> "No completed levels yet. Solve puzzles to track your progress!"
-                            else -> "No levels available."
-                        },
+                        text = "No levels found matching criteria.",
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -206,12 +277,18 @@ fun LevelSelectScreen(
                         .padding(horizontal = 16.dp, vertical = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    items(currentList, key = { it.levelId }) { level ->
+                    items(filteredList, key = { it.levelId }) { level ->
                         val progress = progressMap[level.levelId]
+                        val isFav = favoritesSet.contains(level.levelId)
                         LevelCard(
                             level = level,
                             progress = progress,
-                            onPlayClick = { onLevelSelected(level.levelId) },
+                            isFavorite = isFav,
+                            onFavoriteToggle = {
+                                favRepo.toggleFavorite(level.levelId)
+                                refreshLevels()
+                            },
+                            onPlayClick = { previewLevel = level },
                             onEditClick = { onEditLevel(level.levelId) },
                             onExportClick = { onExportLevel(level.levelId) },
                             onDeleteClick = { levelToDelete = level }
@@ -220,6 +297,56 @@ fun LevelSelectScreen(
                 }
             }
         }
+    }
+
+    // Level Preview Dialog
+    previewLevel?.let { level ->
+        val progress = progressMap[level.levelId]
+        AlertDialog(
+            onDismissRequest = { previewLevel = null },
+            title = {
+                Text(
+                    text = level.name,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 20.sp,
+                    color = AmberPrimary
+                )
+            },
+            text = {
+                Column {
+                    Text(text = level.description.ifBlank { "Optical puzzle challenge." }, fontSize = 14.sp)
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(text = "Difficulty: ${level.difficulty}", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                    Text(text = "Grid Size: ${level.rows}x${level.columns}", fontSize = 13.sp)
+                    Text(text = "Max Energy: ${level.maximumEnergy}", fontSize = 13.sp)
+                    Text(text = "Expected Moves: ${level.expectedMoves}", fontSize = 13.sp)
+                    if (progress?.completed == true) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(text = "Best Score: ${progress.bestScore}", fontWeight = FontWeight.Bold, color = TargetGreen, fontSize = 13.sp)
+                        Text(text = "Stars Earned: ${progress.stars} / 3 ⭐", fontWeight = FontWeight.Bold, color = Color(0xFFFFC107), fontSize = 13.sp)
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val selectedId = level.levelId
+                        previewLevel = null
+                        onLevelSelected(selectedId)
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = AmberPrimary)
+                ) {
+                    Text("START PUZZLE", color = Color.Black, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { previewLevel = null }) {
+                    Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            },
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            modifier = Modifier.testTag("preview_level_dialog")
+        )
     }
 
     // Delete Level Confirmation Dialog
@@ -257,6 +384,8 @@ fun LevelSelectScreen(
 private fun LevelCard(
     level: Level,
     progress: LevelProgress?,
+    isFavorite: Boolean,
+    onFavoriteToggle: () -> Unit,
     onPlayClick: () -> Unit,
     onEditClick: () -> Unit,
     onExportClick: () -> Unit,
@@ -281,6 +410,17 @@ private fun LevelCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(
+                        onClick = onFavoriteToggle,
+                        modifier = Modifier.size(28.dp).testTag("fav_button_${level.levelId}")
+                    ) {
+                        Icon(
+                            imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                            contentDescription = "Favorite",
+                            tint = if (isFavorite) Color.Red else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(4.dp))
                     Text(
                         text = level.name,
                         style = MaterialTheme.typography.titleMedium,
@@ -288,7 +428,7 @@ private fun LevelCard(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     if (isCompleted) {
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
                         Icon(
                             imageVector = Icons.Default.CheckCircle,
                             contentDescription = "Completed",
@@ -302,8 +442,8 @@ private fun LevelCard(
                     modifier = Modifier
                         .background(
                             color = when (level.difficulty.lowercase()) {
-                                "easy" -> TargetGreen.copy(alpha = 0.2f)
-                                "hard" -> Color.Red.copy(alpha = 0.2f)
+                                "easy", "beginner" -> TargetGreen.copy(alpha = 0.2f)
+                                "hard", "master", "expert" -> Color.Red.copy(alpha = 0.2f)
                                 else -> AmberPrimary.copy(alpha = 0.2f)
                             },
                             shape = RoundedCornerShape(8.dp)
@@ -315,8 +455,8 @@ private fun LevelCard(
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
                         color = when (level.difficulty.lowercase()) {
-                            "easy" -> TargetGreen
-                            "hard" -> Color.Red
+                            "easy", "beginner" -> TargetGreen
+                            "hard", "master", "expert" -> Color.Red
                             else -> AmberPrimary
                         }
                     )

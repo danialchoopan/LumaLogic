@@ -1,6 +1,8 @@
 package ir.danialchoopan.lumalogic.domain.level
 
+import ir.danialchoopan.lumalogic.data.level.LevelRegistry
 import ir.danialchoopan.lumalogic.data.model.LevelProgress
+import ir.danialchoopan.lumalogic.data.model.PlayerStats
 import ir.danialchoopan.lumalogic.data.repository.ProgressRepository
 
 /**
@@ -40,7 +42,7 @@ class LevelProgressManager(
             bestScore = bestScore,
             bestTimeSeconds = bestTime,
             bestMoves = bestMoves,
-            hintsUsed = hintsUsed,
+            hintsUsed = (current?.hintsUsed ?: 0) + hintsUsed,
             attempts = attempts,
             completedAt = System.currentTimeMillis()
         )
@@ -61,4 +63,42 @@ class LevelProgressManager(
     fun isLevelCompleted(levelId: String): Boolean {
         return progressRepository.getProgress(levelId)?.completed == true
     }
+
+    fun getPlayerStats(achievementsUnlocked: Int = 0, totalAchievements: Int = 11, favoriteCount: Int = 0): PlayerStats {
+        val allProgress = progressRepository.getAllProgress().filter { it.completed }
+        val totalCompleted = allProgress.size
+        val totalStars = allProgress.sumOf { it.stars }
+        val totalScore = allProgress.sumOf { it.bestScore.toLong() }
+        val maxScore = allProgress.maxOfOrNull { it.bestScore } ?: 0
+        val totalTime = allProgress.sumOf { it.bestTimeSeconds }
+        val totalHints = allProgress.sumOf { it.hintsUsed }
+
+        // Calculate chapter completion
+        var chaptersCompleted = 0
+        for (ch in LevelRegistry.chapters) {
+            val chLevels = LevelRegistry.getLevelsForChapter(ch.id)
+            if (chLevels.all { lvl -> isLevelCompleted(lvl.levelId) }) {
+                chaptersCompleted++
+            }
+        }
+
+        val percentage = if (totalCompleted > 0) (totalCompleted.toFloat() / 256.0f) * 100.0f else 0f
+
+        return PlayerStats(
+            totalLevelsCompleted = totalCompleted,
+            totalLevels = 256,
+            totalStars = totalStars,
+            maxStars = 768,
+            totalScore = totalScore,
+            bestScore = maxScore,
+            totalPlayTimeSeconds = totalTime,
+            hintsUsed = totalHints,
+            chaptersCompleted = chaptersCompleted,
+            favoriteCount = favoriteCount,
+            achievementsUnlocked = achievementsUnlocked,
+            totalAchievements = totalAchievements,
+            completionPercentage = percentage
+        )
+    }
 }
+

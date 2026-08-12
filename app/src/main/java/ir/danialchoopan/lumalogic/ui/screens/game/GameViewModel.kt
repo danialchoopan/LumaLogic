@@ -221,6 +221,10 @@ class GameViewModel(
                 hintsUsed = hintsUsed
             )
 
+            val updatedProgress = AppContainer.levelProgressManager.getProgress(currentLevel.levelId)
+            val updatedStats = AppContainer.levelProgressManager.getPlayerStats()
+            AppContainer.achievementRepository.checkAndUnlockAchievements(updatedStats, updatedProgress)
+
             _completionResult.value = GameCompletionResult(
                 levelId = currentLevel.levelId,
                 levelName = currentLevel.name,

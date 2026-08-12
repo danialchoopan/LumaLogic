@@ -1,8 +1,16 @@
 package ir.danialchoopan.lumalogic.di
 
 import android.content.Context
+import ir.danialchoopan.lumalogic.data.repository.AchievementRepository
+import ir.danialchoopan.lumalogic.data.repository.ChapterRepository
+import ir.danialchoopan.lumalogic.data.repository.DailyPuzzleRepository
+import ir.danialchoopan.lumalogic.data.repository.DefaultChapterRepository
+import ir.danialchoopan.lumalogic.data.repository.DefaultDailyPuzzleRepository
 import ir.danialchoopan.lumalogic.data.repository.FakeLevelRepository
+import ir.danialchoopan.lumalogic.data.repository.FavoriteLevelRepository
 import ir.danialchoopan.lumalogic.data.repository.LevelRepository
+import ir.danialchoopan.lumalogic.data.repository.LocalAchievementRepository
+import ir.danialchoopan.lumalogic.data.repository.LocalFavoriteLevelRepository
 import ir.danialchoopan.lumalogic.data.repository.LocalProgressRepository
 import ir.danialchoopan.lumalogic.data.repository.LocalUserLevelRepository
 import ir.danialchoopan.lumalogic.data.repository.ProgressRepository
@@ -51,11 +59,27 @@ object AppContainer {
     }
 
     val userLevelRepository: UserLevelRepository by lazy {
-        LocalUserLevelRepository()
+        LocalUserLevelRepository(appContext?.filesDir)
     }
 
     val progressRepository: ProgressRepository by lazy {
-        LocalProgressRepository()
+        LocalProgressRepository(appContext?.filesDir)
+    }
+
+    val chapterRepository: ChapterRepository by lazy {
+        DefaultChapterRepository()
+    }
+
+    val favoriteLevelRepository: FavoriteLevelRepository by lazy {
+        LocalFavoriteLevelRepository(appContext?.filesDir)
+    }
+
+    val achievementRepository: AchievementRepository by lazy {
+        LocalAchievementRepository(appContext?.filesDir)
+    }
+
+    val dailyPuzzleRepository: DailyPuzzleRepository by lazy {
+        DefaultDailyPuzzleRepository()
     }
 
     val levelRepository: LevelRepository by lazy {
@@ -102,3 +126,4 @@ object AppContainer {
         ResetLevelUseCase(gameEngine)
     }
 }
+
