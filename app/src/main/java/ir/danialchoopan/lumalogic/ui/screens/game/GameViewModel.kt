@@ -12,18 +12,25 @@ import ir.danialchoopan.lumalogic.domain.command.RotateComponentCommand
 import ir.danialchoopan.lumalogic.domain.debug.DebugSimulationController
 import ir.danialchoopan.lumalogic.domain.debug.DebugSimulationState
 import ir.danialchoopan.lumalogic.domain.engine.LightTraceResult
+import ir.danialchoopan.lumalogic.domain.engine.StopReason
 import ir.danialchoopan.lumalogic.domain.hint.Hint
 import ir.danialchoopan.lumalogic.domain.hint.HintEngine
+import ir.danialchoopan.lumalogic.domain.model.EnergyState
+import ir.danialchoopan.lumalogic.domain.model.GameCompletionResult
 import ir.danialchoopan.lumalogic.domain.model.GameSnapshot
+import ir.danialchoopan.lumalogic.domain.score.ScoreCalculator
 import ir.danialchoopan.lumalogic.domain.usecase.GetLevelUseCase
 import ir.danialchoopan.lumalogic.domain.usecase.MoveCellUseCase
 import ir.danialchoopan.lumalogic.domain.usecase.MoveResult
 import ir.danialchoopan.lumalogic.domain.usecase.ResetLevelUseCase
 import ir.danialchoopan.lumalogic.domain.usecase.RotateCellUseCase
 import ir.danialchoopan.lumalogic.domain.usecase.UpdateSimulationUseCase
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 sealed interface GameUiState {
@@ -82,6 +89,29 @@ class GameViewModel(
     private val _activeHint = MutableStateFlow<Hint?>(null)
     val activeHint: StateFlow<Hint?> = _activeHint.asStateFlow()
 
+    // Energy & Gameplay Stats
+    private val _energyState = MutableStateFlow(EnergyState())
+    val energyState: StateFlow<EnergyState> = _energyState.asStateFlow()
+
+    private val _movesCount = MutableStateFlow(0)
+    val movesCount: StateFlow<Int> = _movesCount.asStateFlow()
+
+    private val _timeSeconds = MutableStateFlow(0L)
+    val timeSeconds: StateFlow<Long> = _timeSeconds.asStateFlow()
+
+    // Game Control States
+    private val _isPaused = MutableStateFlow(false)
+    val isPaused: StateFlow<Boolean> = _isPaused.asStateFlow()
+
+    private val _isWin = MutableStateFlow(false)
+    val isWin: StateFlow<Boolean> = _isWin.asStateFlow()
+
+    private val _isLose = MutableStateFlow(false)
+    val isLose: StateFlow<Boolean> = _isLose.asStateFlow()
+
+    private val _completionResult = MutableStateFlow<GameCompletionResult?>(null)
+    val completionResult: StateFlow<GameCompletionResult?> = _completionResult.asStateFlow()
+
     // Debug Mode
     private val _debugState = MutableStateFlow(DebugSimulationState())
     val debugState: StateFlow<DebugSimulationState> = _debugState.asStateFlow()
@@ -89,8 +119,22 @@ class GameViewModel(
     private val _isDebugModeActive = MutableStateFlow(false)
     val isDebugModeActive: StateFlow<Boolean> = _isDebugModeActive.asStateFlow()
 
+    private var timerJob: Job? = null
+
     init {
         loadLevel()
+    }
+
+    private fun startTimer() {
+        timerJob?.cancel()
+        timerJob = viewModelScope.launch {
+            while (isActive) {
+                delay(1000L)
+                if (!_isPaused.value && !_isWin.value && !_isLose.value) {
+                    _timeSeconds.value += 1L
+                }
+            }
+        }
     }
 
     fun loadLevel(levelId: String? = null) {
@@ -100,23 +144,36 @@ class GameViewModel(
             commandHistory.clear()
             _remainingHints.value = 3
             _activeHint.value = null
+            _movesCount.value = 0
+            _timeSeconds.value = 0L
+            _isPaused.value = false
+            _isWin.value = false
+            _isLose.value = false
+            _completionResult.value = null
             updateUndoRedoStates()
             try {
                 val level = getLevelUseCase(levelId)
+                AppContainer.levelProgressManager.recordAttempt(level.levelId)
                 AppContainer.gameEngine.loadLevel(level)
                 simulate()
+                startTimer()
             } catch (e: Exception) {
                 _uiState.value = GameUiState.Error(e.message ?: "Failed to load level")
             }
         }
     }
 
-    fun startSimulation() {
-        simulate()
+    fun pauseGame() {
+        _isPaused.value = true
     }
 
-    fun resetSimulation() {
-        resetGame()
+    fun resumeGame() {
+        _isPaused.value = false
+    }
+
+    fun togglePause() {
+        _isPaused.value = !_isPaused.value
+        AppContainer.audioManager.playButtonClick()
     }
 
     fun simulate() {
@@ -128,31 +185,66 @@ class GameViewModel(
         _litCells.value = traceResult.visitedCells
         _gameStatus.value = traceResult
 
+        val currentLevel = (uiState.value as? GameUiState.Success)?.level ?: AppContainer.levelRepository.getDemoLevel()
+        val effectiveEnergyState = traceResult.energyState.copy(maximum = currentLevel.maximumEnergy)
+        _energyState.value = effectiveEnergyState
+
         val currentState = _uiState.value
-        if (currentState is GameUiState.Success) {
+        if (currentState !is GameUiState.Success && grid.isNotEmpty()) {
+            _uiState.value = GameUiState.Success(level = currentLevel, cells = grid)
+        } else if (currentState is GameUiState.Success) {
             _uiState.value = currentState.copy(cells = grid)
-            if (traceResult.success) {
-                AppContainer.levelProgressManager.recordLevelCompletion(
-                    levelId = currentState.level.levelId,
-                    score = 1000,
-                    timeSeconds = 30L,
-                    hintsUsed = 3 - _remainingHints.value
-                )
-            }
-        } else if (AppContainer.gameEngine.getGrid().isNotEmpty()) {
-            val level = AppContainer.levelRepository.getDemoLevel()
-            _uiState.value = GameUiState.Success(level = level, cells = grid)
-            if (traceResult.success) {
-                AppContainer.levelProgressManager.recordLevelCompletion(
-                    levelId = level.levelId,
-                    score = 1000,
-                    timeSeconds = 30L,
-                    hintsUsed = 3 - _remainingHints.value
-                )
-            }
         }
 
-        // Keep debug controller in sync with current trace
+        // Check Win state
+        if (traceResult.success && !_isWin.value) {
+            _isWin.value = true
+            val hintsUsed = 3 - _remainingHints.value
+            val optActivated = traceResult.activatedTargets.size - (currentLevel.cells.count { it.type == ir.danialchoopan.lumalogic.data.model.CellType.TARGET && !it.isOptionalTarget })
+            val scoreResult = ScoreCalculator.calculateScore(
+                level = currentLevel,
+                levelCompleted = true,
+                energyRemaining = effectiveEnergyState.remaining,
+                movesCount = _movesCount.value,
+                timeSeconds = _timeSeconds.value,
+                hintsUsed = hintsUsed,
+                optionalTargetsActivated = optActivated.coerceAtLeast(0)
+            )
+            val stars = ScoreCalculator.calculateStars(currentLevel, scoreResult, true)
+
+            AppContainer.levelProgressManager.recordLevelCompletion(
+                levelId = currentLevel.levelId,
+                stars = stars,
+                score = scoreResult.totalScore,
+                timeSeconds = _timeSeconds.value,
+                moves = _movesCount.value,
+                hintsUsed = hintsUsed
+            )
+
+            _completionResult.value = GameCompletionResult(
+                levelId = currentLevel.levelId,
+                levelName = currentLevel.name,
+                isWin = true,
+                scoreResult = scoreResult,
+                stars = stars,
+                energyState = effectiveEnergyState,
+                movesCount = _movesCount.value,
+                timeSeconds = _timeSeconds.value,
+                hintsUsed = hintsUsed,
+                optionalTargetsActivated = optActivated.coerceAtLeast(0)
+            )
+
+            AppContainer.audioManager.playLevelComplete()
+            AppContainer.hapticManager.performLevelComplete()
+        }
+        // Check Lose state (Energy depleted without achieving targets)
+        else if (!traceResult.success && (effectiveEnergyState.isDepleted || traceResult.stoppedReason == StopReason.OUT_OF_ENERGY) && !_isLose.value && !_isWin.value) {
+            _isLose.value = true
+            AppContainer.audioManager.playLevelFailed()
+            AppContainer.hapticManager.performLevelFailed()
+        }
+
+        // Sync debug controller
         debugController.loadTraceResult(traceResult)
         if (_isDebugModeActive.value) {
             _debugState.value = debugController.getCurrentState()
@@ -174,6 +266,7 @@ class GameViewModel(
     }
 
     fun selectCell(position: Position) {
+        if (_isPaused.value || _isWin.value || _isLose.value) return
         val currentSelected = _selectedCell.value
         if (currentSelected == position) {
             rotateSelectedCell()
@@ -198,6 +291,7 @@ class GameViewModel(
     }
 
     fun rotateCellAt(position: Position) {
+        if (_isPaused.value || _isWin.value || _isLose.value) return
         viewModelScope.launch {
             val gridBefore = AppContainer.gameEngine.getGrid()
             val cellBefore = gridBefore.find { it.row == position.row && it.column == position.column } ?: return@launch
@@ -207,6 +301,10 @@ class GameViewModel(
             val beforeSnap = createSnapshot()
 
             rotateCellUseCase(position)
+            _movesCount.value += 1
+            AppContainer.audioManager.playMirrorRotate()
+            AppContainer.hapticManager.performRotate()
+
             simulate()
 
             val gridAfter = AppContainer.gameEngine.getGrid()
@@ -222,14 +320,11 @@ class GameViewModel(
             )
             commandHistory.execute(cmd)
             updateUndoRedoStates()
-
-            if (_gameStatus.value?.success == true) {
-                _userMessage.value = "Target activated! Level Complete!"
-            }
         }
     }
 
     fun moveCell(from: Position, to: Position) {
+        if (_isPaused.value || _isWin.value || _isLose.value) return
         viewModelScope.launch {
             val gridBefore = AppContainer.gameEngine.getGrid()
             val fromCell = gridBefore.find { it.row == from.row && it.column == from.column } ?: return@launch
@@ -241,6 +336,10 @@ class GameViewModel(
             when (result) {
                 is MoveResult.Success -> {
                     _selectedCell.value = null
+                    _movesCount.value += 1
+                    AppContainer.audioManager.playComponentMove()
+                    AppContainer.hapticManager.performRotate()
+
                     simulate()
                     val afterSnap = createSnapshot()
 
@@ -254,24 +353,24 @@ class GameViewModel(
                     )
                     commandHistory.execute(cmd)
                     updateUndoRedoStates()
-
-                    if (_gameStatus.value?.success == true) {
-                        _userMessage.value = "Target activated! Level Complete!"
-                    }
                 }
                 is MoveResult.Failure -> {
                     _userMessage.value = result.reason
+                    AppContainer.audioManager.playError()
+                    AppContainer.hapticManager.performInvalidMove()
                 }
             }
         }
     }
 
     fun undo() {
+        if (_isPaused.value || _isWin.value || _isLose.value) return
         viewModelScope.launch {
             val cmd = commandHistory.undo() ?: return@launch
             val gridBefore = AppContainer.gameEngine.getGrid()
             val gridUndone = cmd.undo(gridBefore)
             AppContainer.gameEngine.setGrid(gridUndone)
+            AppContainer.audioManager.playButtonClick()
             simulate()
             updateUndoRedoStates()
             _userMessage.value = "Undo performed"
@@ -279,11 +378,13 @@ class GameViewModel(
     }
 
     fun redo() {
+        if (_isPaused.value || _isWin.value || _isLose.value) return
         viewModelScope.launch {
             val cmd = commandHistory.redo() ?: return@launch
             val gridBefore = AppContainer.gameEngine.getGrid()
             val gridRedone = cmd.execute(gridBefore)
             AppContainer.gameEngine.setGrid(gridRedone)
+            AppContainer.audioManager.playButtonClick()
             simulate()
             updateUndoRedoStates()
             _userMessage.value = "Redo performed"
@@ -299,6 +400,7 @@ class GameViewModel(
         val state = uiState.value as? GameUiState.Success ?: return
         if (_remainingHints.value <= 0) {
             _userMessage.value = "No hints remaining for this level (0/3)."
+            AppContainer.audioManager.playError()
             return
         }
 
@@ -310,13 +412,13 @@ class GameViewModel(
 
         _remainingHints.value -= 1
         _activeHint.value = hint
+        AppContainer.audioManager.playButtonClick()
     }
 
     fun dismissHint() {
         _activeHint.value = null
     }
 
-    // Debug Simulation Mode
     fun toggleDebugMode(active: Boolean) {
         _isDebugModeActive.value = active
         if (active) {
@@ -361,9 +463,17 @@ class GameViewModel(
             commandHistory.clear()
             _remainingHints.value = 3
             _activeHint.value = null
+            _movesCount.value = 0
+            _timeSeconds.value = 0L
+            _isPaused.value = false
+            _isWin.value = false
+            _isLose.value = false
+            _completionResult.value = null
             updateUndoRedoStates()
             resetLevelUseCase()
+            AppContainer.audioManager.playButtonClick()
             simulate()
+            startTimer()
         }
     }
 
@@ -375,4 +485,10 @@ class GameViewModel(
             loadLevel()
         }
     }
+
+    override fun onCleared() {
+        super.onCleared()
+        timerJob?.cancel()
+    }
 }
+

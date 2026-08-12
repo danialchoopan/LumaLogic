@@ -9,8 +9,10 @@ import com.squareup.moshi.JsonClass
 data class LevelProgress(
     val levelId: String,
     val completed: Boolean = false,
+    val stars: Int = 0,
     val bestScore: Int = 0,
     val bestTimeSeconds: Long = 0L,
+    val bestMoves: Int = 0,
     val hintsUsed: Int = 0,
     val attempts: Int = 0,
     val completedAt: Long = 0L

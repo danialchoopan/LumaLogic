@@ -10,5 +10,6 @@ enum class StopReason {
     LOOP_DETECTED,
     NO_SOURCE,
     FILTER_BLOCKED,
-    MAX_STEPS_REACHED
+    MAX_STEPS_REACHED,
+    OUT_OF_ENERGY
 }

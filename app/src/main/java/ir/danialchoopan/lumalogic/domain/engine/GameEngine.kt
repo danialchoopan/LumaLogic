@@ -51,7 +51,8 @@ class GameEngine {
             return emptyResult
         }
 
-        val traceResult = gridEngine.traceLight(level.rows, level.columns, activeCells)
+        val energyConfig = level.energyConfig.copy(maxEnergy = level.maximumEnergy)
+        val traceResult = gridEngine.traceLight(level.rows, level.columns, activeCells, energyConfig)
         activeCells = gridEngine.updateGridWithTrace(activeCells, traceResult).toMutableList()
         lastTraceResult = traceResult
         return traceResult

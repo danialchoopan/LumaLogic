@@ -126,6 +126,12 @@ fun LumaNavGraph(
             GameScreen(
                 viewModel = gameViewModel,
                 onBackClick = { navController.popBackStack() },
+                onNextLevelClick = { nextLevelId ->
+                    navController.navigate("game/$nextLevelId") {
+                        popUpTo(LumaDestinations.LEVEL_SELECT)
+                    }
+                },
+                onSettingsClick = { navController.navigate(LumaDestinations.SETTINGS) },
                 onDebugClick = { navController.navigate(LumaDestinations.DEBUG) }
             )
         }
@@ -135,6 +141,12 @@ fun LumaNavGraph(
             GameScreen(
                 viewModel = gameViewModel,
                 onBackClick = { navController.popBackStack() },
+                onNextLevelClick = { nextLevelId ->
+                    navController.navigate("game/$nextLevelId") {
+                        popUpTo(LumaDestinations.LEVEL_SELECT)
+                    }
+                },
+                onSettingsClick = { navController.navigate(LumaDestinations.SETTINGS) },
                 onDebugClick = { navController.navigate(LumaDestinations.DEBUG) }
             )
         }

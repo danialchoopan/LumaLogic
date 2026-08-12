@@ -4,6 +4,7 @@ import ir.danialchoopan.lumalogic.data.model.Position
 import ir.danialchoopan.lumalogic.domain.model.BeamEvent
 import ir.danialchoopan.lumalogic.domain.model.BeamSegment
 import ir.danialchoopan.lumalogic.domain.model.BeamState
+import ir.danialchoopan.lumalogic.domain.model.EnergyState
 import ir.danialchoopan.lumalogic.domain.model.GateState
 
 /**
@@ -16,6 +17,7 @@ data class LightTraceResult(
     val success: Boolean,
     val energyUsed: Int,
     val stoppedReason: StopReason,
+    val energyState: EnergyState = EnergyState(used = energyUsed),
     val beamSegments: List<BeamSegment> = emptyList(),
     val litCells: Set<Position> = visitedCells,
     val terminatedBeams: List<BeamState> = emptyList(),

@@ -7,6 +7,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
+import ir.danialchoopan.lumalogic.di.AppContainer
 import ir.danialchoopan.lumalogic.ui.navigation.LumaNavGraph
 import ir.danialchoopan.lumalogic.ui.theme.LumaLogicTheme
 
@@ -18,6 +19,7 @@ import ir.danialchoopan.lumalogic.ui.theme.LumaLogicTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        AppContainer.initialize(this)
         enableEdgeToEdge()
         setContent {
             LumaLogicTheme {

@@ -3,6 +3,7 @@ package ir.danialchoopan.lumalogic.domain.engine
 import ir.danialchoopan.lumalogic.data.model.Cell
 import ir.danialchoopan.lumalogic.data.model.CellType
 import ir.danialchoopan.lumalogic.data.model.Direction
+import ir.danialchoopan.lumalogic.data.model.EnergyConfig
 import ir.danialchoopan.lumalogic.data.model.LightColor
 import ir.danialchoopan.lumalogic.data.model.Position
 import ir.danialchoopan.lumalogic.data.model.Rotation
@@ -10,6 +11,7 @@ import ir.danialchoopan.lumalogic.domain.model.BeamAction
 import ir.danialchoopan.lumalogic.domain.model.BeamEvent
 import ir.danialchoopan.lumalogic.domain.model.BeamSegment
 import ir.danialchoopan.lumalogic.domain.model.BeamState
+import ir.danialchoopan.lumalogic.domain.model.EnergyState
 import ir.danialchoopan.lumalogic.domain.model.GateState
 
 /**
@@ -37,7 +39,12 @@ class GridEngine {
     /**
      * Traces light starting from all Source cells and active Gates across the grid.
      */
-    fun traceLight(rows: Int, columns: Int, cells: List<Cell>): LightTraceResult {
+    fun traceLight(
+        rows: Int,
+        columns: Int,
+        cells: List<Cell>,
+        energyConfig: EnergyConfig = EnergyConfig()
+    ): LightTraceResult {
         val cellMap = cells.associateBy { Position(it.row, it.column) }
         val sources = cells.filter { it.type == CellType.SOURCE }
         val gates = cells.filter { it.type == CellType.GATE }
@@ -49,7 +56,8 @@ class GridEngine {
                 activatedTargets = emptySet(),
                 success = false,
                 energyUsed = 0,
-                stoppedReason = StopReason.NO_SOURCE
+                stoppedReason = StopReason.NO_SOURCE,
+                energyState = EnergyState(maximum = energyConfig.maxEnergy, remaining = energyConfig.maxEnergy, used = 0)
             )
         }
 
@@ -131,6 +139,7 @@ class GridEngine {
         }
 
         var stepCounter = 0
+        var totalEnergyUsed = 0
         var finalStopReason = StopReason.OUT_OF_BOUNDS
 
         while (queue.isNotEmpty() && stepCounter < MAX_STEPS) {
@@ -141,6 +150,12 @@ class GridEngine {
             val currDir = currentBeam.direction
             val currColor = currentBeam.color
             val branchId = currentBeam.branchId
+
+            if (totalEnergyUsed >= energyConfig.maxEnergy) {
+                finalStopReason = StopReason.OUT_OF_ENERGY
+                terminatedBeams.add(currentBeam)
+                break
+            }
 
             val moveEvent = BeamEvent(
                 step = stepCounter,
@@ -199,12 +214,21 @@ class GridEngine {
             beamSegments.add(segment)
 
             val targetCell = cellMap[nextPos]
+            val actionCost = when (targetCell?.type) {
+                CellType.MIRROR -> energyConfig.mirrorCost
+                CellType.SPLITTER -> energyConfig.splitterCost
+                CellType.FILTER -> energyConfig.filterCost
+                CellType.GATE -> energyConfig.gateCost
+                else -> energyConfig.cellTraversalCost
+            }
+            totalEnergyUsed += actionCost
+
             if (targetCell == null || targetCell.type == CellType.EMPTY || targetCell.type == CellType.WIRE || targetCell.type == CellType.SOURCE) {
                 // Continue straight
                 queue.addLast(
                     currentBeam.copy(
                         position = nextPos,
-                        energy = currentBeam.energy - 1
+                        energy = currentBeam.energy - actionCost
                     )
                 )
                 continue
@@ -397,13 +421,21 @@ class GridEngine {
             finalStopReason = StopReason.TARGET_REACHED
         }
 
+        val remainingEnergy = (energyConfig.maxEnergy - totalEnergyUsed).coerceAtLeast(0)
+        val energyState = EnergyState(
+            maximum = energyConfig.maxEnergy,
+            remaining = remainingEnergy,
+            used = totalEnergyUsed
+        )
+
         return LightTraceResult(
             path = fullPath,
             visitedCells = visitedCells,
             activatedTargets = activatedTargets,
             success = success,
-            energyUsed = beamSegments.size,
+            energyUsed = totalEnergyUsed,
             stoppedReason = finalStopReason,
+            energyState = energyState,
             beamSegments = beamSegments,
             litCells = visitedCells,
             terminatedBeams = terminatedBeams,

@@ -67,9 +67,17 @@ import ir.danialchoopan.lumalogic.ui.theme.SourceYellow
 import ir.danialchoopan.lumalogic.ui.theme.TargetGreen
 import ir.danialchoopan.lumalogic.ui.theme.WireGray
 
+import androidx.compose.material.icons.filled.Pause
+import ir.danialchoopan.lumalogic.ui.screens.game.components.EnergyBar
+import ir.danialchoopan.lumalogic.ui.screens.game.components.LoseDialog
+import ir.danialchoopan.lumalogic.ui.screens.game.components.PauseDialog
+import ir.danialchoopan.lumalogic.ui.screens.game.components.WinDialog
+
 @Composable
 fun GameScreen(
     onBackClick: () -> Unit,
+    onNextLevelClick: (String) -> Unit = {},
+    onSettingsClick: () -> Unit = {},
     onDebugClick: () -> Unit = {},
     viewModel: GameViewModel = viewModel()
 ) {
@@ -84,6 +92,14 @@ fun GameScreen(
     val canRedo by viewModel.canRedo.collectAsState()
     val remainingHints by viewModel.remainingHints.collectAsState()
     val activeHint by viewModel.activeHint.collectAsState()
+
+    val energyState by viewModel.energyState.collectAsState()
+    val movesCount by viewModel.movesCount.collectAsState()
+    val timeSeconds by viewModel.timeSeconds.collectAsState()
+    val isPaused by viewModel.isPaused.collectAsState()
+    val isWin by viewModel.isWin.collectAsState()
+    val isLose by viewModel.isLose.collectAsState()
+    val completionResult by viewModel.completionResult.collectAsState()
 
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -104,6 +120,17 @@ fun GameScreen(
                 onBackClick = onBackClick,
                 actions = {
                     IconButton(
+                        onClick = { viewModel.togglePause() },
+                        modifier = Modifier.testTag("pause_button")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Pause,
+                            contentDescription = "Pause",
+                            tint = AmberPrimary
+                        )
+                    }
+
+                    IconButton(
                         onClick = {
                             viewModel.toggleDebugMode(true)
                             onDebugClick()
@@ -118,7 +145,7 @@ fun GameScreen(
                     }
 
                     IconButton(
-                        onClick = { viewModel.resetSimulation() },
+                        onClick = { viewModel.resetGame() },
                         modifier = Modifier.testTag("reset_game_button")
                     ) {
                         Icon(
@@ -140,7 +167,7 @@ fun GameScreen(
                     onUndoClick = { viewModel.undo() },
                     onRedoClick = { viewModel.redo() },
                     onHintClick = { viewModel.requestHint() },
-                    onResetClick = { viewModel.resetSimulation() }
+                    onResetClick = { viewModel.resetGame() }
                 )
             }
         },
@@ -217,6 +244,9 @@ fun GameScreen(
                             }
                         }
 
+                        // Energy Bar
+                        EnergyBar(energyState = energyState)
+
                         // Active Hint Overlay Card
                         activeHint?.let { hint ->
                             HintOverlayCard(
@@ -276,9 +306,44 @@ fun GameScreen(
                             horizontalArrangement = Arrangement.SpaceEvenly,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            HudStatItem(label = "ENERGY", value = "${gameStatus?.energyUsed ?: 0}")
-                            HudStatItem(label = "BEAM PATH", value = "${beamPath.size}")
+                            HudStatItem(label = "MOVES", value = "$movesCount")
+                            HudStatItem(label = "TIME", value = String.format("%02d:%02d", timeSeconds / 60, timeSeconds % 60))
                             HudStatItem(label = "GRID", value = "${state.level.rows}x${state.level.columns}")
+                        }
+
+                        // Dialog Overlays
+                        if (isPaused) {
+                            PauseDialog(
+                                levelName = state.level.name,
+                                onResume = { viewModel.resumeGame() },
+                                onRestart = { viewModel.resetGame() },
+                                onSettings = onSettingsClick,
+                                onExitLevel = onBackClick
+                            )
+                        }
+
+                        if (isWin && completionResult != null) {
+                            WinDialog(
+                                result = completionResult!!,
+                                onRetry = { viewModel.resetGame() },
+                                onNextLevel = {
+                                    val nextId = "level_${state.level.levelId.removePrefix("level_").toIntOrNull()?.plus(1) ?: 1}"
+                                    onNextLevelClick(nextId)
+                                },
+                                onLevelSelect = onBackClick,
+                                onHome = onBackClick
+                            )
+                        }
+
+                        if (isLose) {
+                            LoseDialog(
+                                levelName = state.level.name,
+                                energyUsed = energyState.used,
+                                movesCount = movesCount,
+                                onRetry = { viewModel.resetGame() },
+                                onLevelSelect = onBackClick,
+                                onHome = onBackClick
+                            )
                         }
 
                         // Legend Indicator

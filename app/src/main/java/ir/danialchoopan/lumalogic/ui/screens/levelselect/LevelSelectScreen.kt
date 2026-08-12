@@ -27,6 +27,7 @@ import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.FileUpload
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Badge
 import androidx.compose.material3.Button
@@ -333,18 +334,33 @@ private fun LevelCard(
 
             if (isCompleted && progress != null) {
                 Spacer(modifier = Modifier.height(4.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Default.Star,
-                        contentDescription = "Score",
-                        tint = AmberPrimary,
-                        modifier = Modifier.size(14.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        for (i in 1..3) {
+                            Icon(
+                                imageVector = if (i <= progress.stars) Icons.Default.Star else Icons.Outlined.Star,
+                                contentDescription = null,
+                                tint = if (i <= progress.stars) AmberPrimary else Color.Gray.copy(alpha = 0.4f),
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "Score: ${progress.bestScore}",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = AmberPrimary,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
                     Text(
-                        text = "Best Score: ${progress.bestScore} • Attempts: ${progress.attempts}",
+                        text = "Best Time: ${progress.bestTimeSeconds}s",
                         style = MaterialTheme.typography.labelSmall,
-                        color = AmberPrimary
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
