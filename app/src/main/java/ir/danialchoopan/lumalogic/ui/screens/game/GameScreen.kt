@@ -21,9 +21,18 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Redo
+import androidx.compose.material.icons.automirrored.filled.Undo
+import androidx.compose.material.icons.filled.BugReport
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Lightbulb
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -48,6 +57,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import ir.danialchoopan.lumalogic.domain.hint.Hint
 import ir.danialchoopan.lumalogic.ui.components.GameCanvas
 import ir.danialchoopan.lumalogic.ui.components.GlowingCard
 import ir.danialchoopan.lumalogic.ui.components.LumaHeader
@@ -60,6 +70,7 @@ import ir.danialchoopan.lumalogic.ui.theme.WireGray
 @Composable
 fun GameScreen(
     onBackClick: () -> Unit,
+    onDebugClick: () -> Unit = {},
     viewModel: GameViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -68,6 +79,11 @@ fun GameScreen(
     val beamSegments by viewModel.beamSegments.collectAsState()
     val selectedCell by viewModel.selectedCell.collectAsState()
     val userMessage by viewModel.userMessage.collectAsState()
+
+    val canUndo by viewModel.canUndo.collectAsState()
+    val canRedo by viewModel.canRedo.collectAsState()
+    val remainingHints by viewModel.remainingHints.collectAsState()
+    val activeHint by viewModel.activeHint.collectAsState()
 
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -88,6 +104,20 @@ fun GameScreen(
                 onBackClick = onBackClick,
                 actions = {
                     IconButton(
+                        onClick = {
+                            viewModel.toggleDebugMode(true)
+                            onDebugClick()
+                        },
+                        modifier = Modifier.testTag("debug_mode_button")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.BugReport,
+                            contentDescription = "Debug Simulation",
+                            tint = AmberPrimary
+                        )
+                    }
+
+                    IconButton(
                         onClick = { viewModel.resetSimulation() },
                         modifier = Modifier.testTag("reset_game_button")
                     ) {
@@ -104,9 +134,13 @@ fun GameScreen(
         bottomBar = {
             if (uiState is GameUiState.Success) {
                 SleekBottomControlShell(
-                    onResetClick = { viewModel.resetSimulation() },
-                    onPlayClick = { viewModel.startSimulation() },
-                    onHintClick = { viewModel.setUserMessage("Tap to rotate components, long-press & drag to move them!") }
+                    canUndo = canUndo,
+                    canRedo = canRedo,
+                    remainingHints = remainingHints,
+                    onUndoClick = { viewModel.undo() },
+                    onRedoClick = { viewModel.redo() },
+                    onHintClick = { viewModel.requestHint() },
+                    onResetClick = { viewModel.resetSimulation() }
                 )
             }
         },
@@ -183,6 +217,14 @@ fun GameScreen(
                             }
                         }
 
+                        // Active Hint Overlay Card
+                        activeHint?.let { hint ->
+                            HintOverlayCard(
+                                hint = hint,
+                                onDismiss = { viewModel.dismissHint() }
+                            )
+                        }
+
                         // Centered Grid Container with Canvas Renderer
                         AnimatedVisibility(
                             visible = true,
@@ -226,7 +268,7 @@ fun GameScreen(
                             }
                         }
 
-                        // Sleek HUD Stats (Energy & Path length counters)
+                        // Sleek HUD Stats
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -264,6 +306,76 @@ fun GameScreen(
 }
 
 @Composable
+private fun HintOverlayCard(
+    hint: Hint,
+    onDismiss: () -> Unit
+) {
+    Card(
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        ),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+            .border(1.dp, AmberPrimary, RoundedCornerShape(16.dp))
+            .testTag("hint_overlay")
+    ) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.Lightbulb,
+                        contentDescription = "Hint",
+                        tint = AmberPrimary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.size(6.dp))
+                    Text(
+                        text = "HINT (${hint.type.name})",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = AmberPrimary,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                IconButton(
+                    onClick = onDismiss,
+                    modifier = Modifier
+                        .size(24.dp)
+                        .testTag("dismiss_hint_button")
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Close Hint",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+            Text(
+                text = hint.message,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            hint.suggestedAction?.let { action ->
+                Text(
+                    text = "Action: $action",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color.Cyan,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+        }
+    }
+}
+
+@Composable
 private fun HudStatItem(label: String, value: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
@@ -285,9 +397,13 @@ private fun HudStatItem(label: String, value: String) {
 
 @Composable
 private fun SleekBottomControlShell(
-    onResetClick: () -> Unit,
-    onPlayClick: () -> Unit,
-    onHintClick: () -> Unit
+    canUndo: Boolean,
+    canRedo: Boolean,
+    remainingHints: Int,
+    onUndoClick: () -> Unit,
+    onRedoClick: () -> Unit,
+    onHintClick: () -> Unit,
+    onResetClick: () -> Unit
 ) {
     Box(
         modifier = Modifier
@@ -299,33 +415,58 @@ private fun SleekBottomControlShell(
                 color = Color.White.copy(alpha = 0.05f),
                 shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
             )
-            .padding(vertical = 16.dp, horizontal = 24.dp)
+            .padding(vertical = 12.dp, horizontal = 16.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceAround,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // Undo Button
+            SleekCircularButton(
+                icon = Icons.AutoMirrored.Filled.Undo,
+                label = "UNDO",
+                onClick = onUndoClick,
+                enabled = canUndo,
+                testTag = "undo_button"
+            )
+
+            // Redo Button
+            SleekCircularButton(
+                icon = Icons.AutoMirrored.Filled.Redo,
+                label = "REDO",
+                onClick = onRedoClick,
+                enabled = canRedo,
+                testTag = "redo_button"
+            )
+
+            // Reset Button
             SleekCircularButton(
                 icon = Icons.Default.Refresh,
                 label = "RESET",
                 onClick = onResetClick,
-                isPrimary = false
+                enabled = true,
+                testTag = "reset_button"
             )
 
-            SleekCircularButton(
-                icon = Icons.Default.PlayArrow,
-                label = "RELOAD",
-                onClick = onPlayClick,
-                isPrimary = true
-            )
-
-            SleekCircularButton(
-                icon = Icons.Default.Lightbulb,
-                label = "HINT",
-                onClick = onHintClick,
-                isPrimary = false
-            )
+            // Hint Button
+            BadgedBox(
+                badge = {
+                    if (remainingHints > 0) {
+                        Badge(containerColor = AmberPrimary, contentColor = Color.Black) {
+                            Text("$remainingHints", fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            ) {
+                SleekCircularButton(
+                    icon = Icons.Default.Lightbulb,
+                    label = "HINT",
+                    onClick = onHintClick,
+                    enabled = remainingHints > 0,
+                    testTag = "hint_button"
+                )
+            }
         }
     }
 }
@@ -335,23 +476,26 @@ private fun SleekCircularButton(
     icon: ImageVector,
     label: String,
     onClick: () -> Unit,
-    isPrimary: Boolean
+    enabled: Boolean = true,
+    testTag: String = ""
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
-        modifier = Modifier.clickable { onClick() }
+        modifier = Modifier
+            .testTag(testTag)
+            .clickable(enabled = enabled) { onClick() }
     ) {
         Box(
             modifier = Modifier
-                .size(if (isPrimary) 60.dp else 50.dp)
+                .size(46.dp)
                 .clip(CircleShape)
                 .background(
-                    if (isPrimary) AmberPrimary else MaterialTheme.colorScheme.background
+                    if (enabled) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
                 )
                 .border(
                     width = 1.dp,
-                    color = if (isPrimary) AmberPrimary else Color.White.copy(alpha = 0.1f),
+                    color = if (enabled) AmberPrimary.copy(alpha = 0.5f) else Color.White.copy(alpha = 0.05f),
                     shape = CircleShape
                 ),
             contentAlignment = Alignment.Center
@@ -359,8 +503,8 @@ private fun SleekCircularButton(
             Icon(
                 imageVector = icon,
                 contentDescription = label,
-                tint = if (isPrimary) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.size(if (isPrimary) 30.dp else 22.dp)
+                tint = if (enabled) AmberPrimary else Color.Gray.copy(alpha = 0.5f),
+                modifier = Modifier.size(22.dp)
             )
         }
         Spacer(modifier = Modifier.height(4.dp))
@@ -368,7 +512,7 @@ private fun SleekCircularButton(
             text = label,
             fontSize = 9.sp,
             fontWeight = FontWeight.Bold,
-            color = if (isPrimary) AmberPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+            color = if (enabled) AmberPrimary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
             letterSpacing = 1.sp
         )
     }

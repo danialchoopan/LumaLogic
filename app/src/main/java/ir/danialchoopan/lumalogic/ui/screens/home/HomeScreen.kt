@@ -16,6 +16,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.GridOn
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
@@ -44,6 +47,9 @@ import ir.danialchoopan.lumalogic.ui.theme.AmberPrimary
 @Composable
 fun HomeScreen(
     onPlayClick: () -> Unit,
+    onLevelSelectClick: () -> Unit = {},
+    onLevelEditorClick: () -> Unit = {},
+    onImportClick: () -> Unit = {},
     onSettingsClick: () -> Unit,
     onAboutClick: () -> Unit
 ) {
@@ -150,14 +156,30 @@ fun HomeScreen(
             ) {
                 Column(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     LumaButton(
-                        text = "Play Demo Level",
-                        onClick = onPlayClick,
-                        icon = Icons.Default.PlayArrow,
-                        testTag = "play_button",
+                        text = "Select Level",
+                        onClick = onLevelSelectClick,
+                        icon = Icons.Default.GridOn,
+                        testTag = "level_select_button",
                         isPrimary = true
+                    )
+
+                    LumaButton(
+                        text = "Level Editor",
+                        onClick = onLevelEditorClick,
+                        icon = Icons.Default.Edit,
+                        testTag = "level_editor_button",
+                        isPrimary = false
+                    )
+
+                    LumaButton(
+                        text = "Import Level",
+                        onClick = onImportClick,
+                        icon = Icons.Default.FileDownload,
+                        testTag = "import_level_button",
+                        isPrimary = false
                     )
 
                     LumaButton(

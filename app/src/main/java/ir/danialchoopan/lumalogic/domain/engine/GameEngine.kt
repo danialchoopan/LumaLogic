@@ -1,11 +1,10 @@
 package ir.danialchoopan.lumalogic.domain.engine
 
 import ir.danialchoopan.lumalogic.data.model.Cell
-import ir.danialchoopan.lumalogic.data.model.Level
-import ir.danialchoopan.lumalogic.data.model.Rotation
-
 import ir.danialchoopan.lumalogic.data.model.CellType
+import ir.danialchoopan.lumalogic.data.model.Level
 import ir.danialchoopan.lumalogic.data.model.Position
+import ir.danialchoopan.lumalogic.data.model.Rotation
 import ir.danialchoopan.lumalogic.domain.usecase.MoveResult
 
 /**
@@ -29,6 +28,11 @@ class GameEngine {
     fun loadLevel(level: Level) {
         currentLevel = level
         activeCells = level.cells.toMutableList()
+        simulate()
+    }
+
+    fun setGrid(cells: List<Cell>) {
+        activeCells = cells.toMutableList()
         simulate()
     }
 
@@ -154,4 +158,3 @@ class GameEngine {
         return MoveResult.Success(getGrid())
     }
 }
-

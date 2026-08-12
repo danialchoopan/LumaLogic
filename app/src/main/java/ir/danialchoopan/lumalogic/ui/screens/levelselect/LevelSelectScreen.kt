@@ -1,0 +1,420 @@
+package ir.danialchoopan.lumalogic.ui.screens.levelselect
+
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.FileUpload
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Badge
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.PrimaryTabRow
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Tab
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import ir.danialchoopan.lumalogic.data.model.Level
+import ir.danialchoopan.lumalogic.data.model.LevelProgress
+import ir.danialchoopan.lumalogic.di.AppContainer
+import ir.danialchoopan.lumalogic.ui.components.GlowingCard
+import ir.danialchoopan.lumalogic.ui.components.LumaButton
+import ir.danialchoopan.lumalogic.ui.components.LumaHeader
+import ir.danialchoopan.lumalogic.ui.theme.AmberPrimary
+import ir.danialchoopan.lumalogic.ui.theme.TargetGreen
+
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@Composable
+fun LevelSelectScreen(
+    onBackClick: () -> Unit,
+    onLevelSelected: (String) -> Unit,
+    onCreateNewLevel: () -> Unit,
+    onEditLevel: (String) -> Unit,
+    onImportLevel: () -> Unit,
+    onExportLevel: (String) -> Unit
+) {
+    var selectedTabIndex by remember { mutableIntStateOf(0) }
+    var levels by remember { mutableStateOf<List<Level>>(emptyList()) }
+    var progressMap by remember { mutableStateOf<Map<String, LevelProgress>>(emptyMap()) }
+    var levelToDelete by remember { mutableStateOf<Level?>(null) }
+
+    fun refreshLevels() {
+        levels = AppContainer.levelManager.getAllLevels()
+        progressMap = AppContainer.levelProgressManager.getAllProgress().associateBy { it.levelId }
+    }
+
+    LaunchedEffect(Unit) {
+        refreshLevels()
+    }
+
+    val builtInLevels = levels.filter { !it.isUserCreated }
+    val userLevels = levels.filter { it.isUserCreated }
+    val completedLevels = levels.filter { progressMap[it.levelId]?.completed == true }
+
+    Scaffold(
+        topBar = {
+            LumaHeader(
+                title = "Select Puzzle Level",
+                onBackClick = onBackClick,
+                actions = {
+                    IconButton(
+                        onClick = onImportLevel,
+                        modifier = Modifier.testTag("import_level_button")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.FileDownload,
+                            contentDescription = "Import Level",
+                            tint = AmberPrimary
+                        )
+                    }
+                }
+            )
+        },
+        containerColor = MaterialTheme.colorScheme.background,
+        modifier = Modifier.testTag("level_select_screen")
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+        ) {
+            // Section Tabs
+            PrimaryTabRow(
+                selectedTabIndex = selectedTabIndex,
+                containerColor = MaterialTheme.colorScheme.surface,
+                contentColor = AmberPrimary
+            ) {
+                Tab(
+                    selected = selectedTabIndex == 0,
+                    onClick = { selectedTabIndex = 0 },
+                    text = { Text("Built-in (${builtInLevels.size})", fontWeight = FontWeight.Bold) },
+                    modifier = Modifier.testTag("tab_builtin_levels")
+                )
+                Tab(
+                    selected = selectedTabIndex == 1,
+                    onClick = { selectedTabIndex = 1 },
+                    text = { Text("My Levels (${userLevels.size})", fontWeight = FontWeight.Bold) },
+                    modifier = Modifier.testTag("tab_user_levels")
+                )
+                Tab(
+                    selected = selectedTabIndex == 2,
+                    onClick = { selectedTabIndex = 2 },
+                    text = { Text("Completed (${completedLevels.size})", fontWeight = FontWeight.Bold) },
+                    modifier = Modifier.testTag("tab_completed_levels")
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Action Toolbar for Custom Levels
+            if (selectedTabIndex == 1) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    LumaButton(
+                        text = "New Level",
+                        onClick = onCreateNewLevel,
+                        icon = Icons.Default.Add,
+                        modifier = Modifier.weight(1f),
+                        testTag = "create_level_button"
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    LumaButton(
+                        text = "Import",
+                        onClick = onImportLevel,
+                        icon = Icons.Default.FileDownload,
+                        modifier = Modifier.weight(1f),
+                        isPrimary = false,
+                        testTag = "import_action_button"
+                    )
+                }
+            }
+
+            // Level List
+            val currentList = when (selectedTabIndex) {
+                0 -> builtInLevels
+                1 -> userLevels
+                else -> completedLevels
+            }
+
+            if (currentList.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(32.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = when (selectedTabIndex) {
+                            1 -> "No custom levels created yet. Tap 'New Level' or 'Import' to create one!"
+                            2 -> "No completed levels yet. Solve puzzles to track your progress!"
+                            else -> "No levels available."
+                        },
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(currentList, key = { it.levelId }) { level ->
+                        val progress = progressMap[level.levelId]
+                        LevelCard(
+                            level = level,
+                            progress = progress,
+                            onPlayClick = { onLevelSelected(level.levelId) },
+                            onEditClick = { onEditLevel(level.levelId) },
+                            onExportClick = { onExportLevel(level.levelId) },
+                            onDeleteClick = { levelToDelete = level }
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    // Delete Level Confirmation Dialog
+    levelToDelete?.let { level ->
+        AlertDialog(
+            onDismissRequest = { levelToDelete = null },
+            title = { Text("Delete Custom Level?", fontWeight = FontWeight.Bold, color = AmberPrimary) },
+            text = {
+                Text("Are you sure you want to delete '${level.name}'? This action cannot be undone.")
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        AppContainer.levelManager.deleteUserLevel(level.levelId)
+                        levelToDelete = null
+                        refreshLevels()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text("Delete")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { levelToDelete = null }) {
+                    Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            },
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            modifier = Modifier.testTag("delete_level_dialog")
+        )
+    }
+}
+
+@Composable
+private fun LevelCard(
+    level: Level,
+    progress: LevelProgress?,
+    onPlayClick: () -> Unit,
+    onEditClick: () -> Unit,
+    onExportClick: () -> Unit,
+    onDeleteClick: () -> Unit
+) {
+    val isCompleted = progress?.completed == true
+
+    GlowingCard(
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag("level_card_${level.levelId}"),
+        borderColor = if (isCompleted) TargetGreen.copy(alpha = 0.6f) else AmberPrimary.copy(alpha = 0.3f)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = level.name,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    if (isCompleted) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Icon(
+                            imageVector = Icons.Default.CheckCircle,
+                            contentDescription = "Completed",
+                            tint = TargetGreen,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+
+                Box(
+                    modifier = Modifier
+                        .background(
+                            color = when (level.difficulty.lowercase()) {
+                                "easy" -> TargetGreen.copy(alpha = 0.2f)
+                                "hard" -> Color.Red.copy(alpha = 0.2f)
+                                else -> AmberPrimary.copy(alpha = 0.2f)
+                            },
+                            shape = RoundedCornerShape(8.dp)
+                        )
+                        .padding(horizontal = 8.dp, vertical = 2.dp)
+                ) {
+                    Text(
+                        text = level.difficulty.uppercase(),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = when (level.difficulty.lowercase()) {
+                            "easy" -> TargetGreen
+                            "hard" -> Color.Red
+                            else -> AmberPrimary
+                        }
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Text(
+                text = level.description.ifBlank { "Grid size: ${level.rows}x${level.columns} • Author: ${level.author}" },
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 2
+            )
+
+            if (isCompleted && progress != null) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.Star,
+                        contentDescription = "Score",
+                        tint = AmberPrimary,
+                        modifier = Modifier.size(14.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "Best Score: ${progress.bestScore} • Attempts: ${progress.attempts}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = AmberPrimary
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row {
+                    if (level.isUserCreated) {
+                        IconButton(
+                            onClick = onEditClick,
+                            modifier = Modifier
+                                .size(36.dp)
+                                .testTag("edit_level_button_${level.levelId}")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = "Edit Level",
+                                tint = AmberPrimary
+                            )
+                        }
+
+                        IconButton(
+                            onClick = onDeleteClick,
+                            modifier = Modifier
+                                .size(36.dp)
+                                .testTag("delete_level_button_${level.levelId}")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = "Delete Level",
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
+
+                    IconButton(
+                        onClick = onExportClick,
+                        modifier = Modifier
+                            .size(36.dp)
+                            .testTag("export_level_button_${level.levelId}")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.FileUpload,
+                            contentDescription = "Export JSON",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                Button(
+                    onClick = onPlayClick,
+                    colors = ButtonDefaults.buttonColors(containerColor = AmberPrimary),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.testTag("play_level_button_${level.levelId}")
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.PlayArrow,
+                        contentDescription = "Play",
+                        tint = Color.Black,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("PLAY", color = Color.Black, fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+    }
+}

@@ -1,18 +1,18 @@
 package ir.danialchoopan.lumalogic.ui.screens.settings
 
-import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
+import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Language
-import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -37,7 +37,8 @@ import ir.danialchoopan.lumalogic.ui.theme.AmberPrimary
 
 @Composable
 fun SettingsScreen(
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    onOpenDebugClick: () -> Unit = {}
 ) {
     var isDarkTheme by remember { mutableStateOf(true) }
     var isSoundEnabled by remember { mutableStateOf(true) }
@@ -68,7 +69,7 @@ fun SettingsScreen(
                 fontWeight = FontWeight.Bold
             )
 
-            // Theme Toggle Placeholder
+            // Theme Toggle
             SettingToggleRow(
                 icon = Icons.Default.DarkMode,
                 title = "Dark Theme",
@@ -78,9 +79,9 @@ fun SettingsScreen(
                 testTag = "theme_switch"
             )
 
-            // Sound Toggle Placeholder
+            // Sound Toggle
             SettingToggleRow(
-                icon = Icons.Default.VolumeUp,
+                icon = Icons.AutoMirrored.Filled.VolumeUp,
                 title = "Audio Effects & Haptics",
                 subtitle = "Beam reflection feedback sounds",
                 isChecked = isSoundEnabled,
@@ -88,9 +89,12 @@ fun SettingsScreen(
                 testTag = "sound_switch"
             )
 
-            // Language Selection Placeholder
+            // Developer Debug Mode Entry
             GlowingCard(
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onOpenDebugClick() }
+                    .testTag("debug_mode_settings_item")
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -99,20 +103,20 @@ fun SettingsScreen(
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
-                            imageVector = Icons.Default.Language,
-                            contentDescription = null,
+                            imageVector = Icons.Default.BugReport,
+                            contentDescription = "Debug Mode",
                             tint = AmberPrimary,
                             modifier = Modifier.padding(end = 12.dp)
                         )
                         Column {
                             Text(
-                                text = "Language",
+                                text = "Light Engine Debugger",
                                 style = MaterialTheme.typography.bodyLarge,
                                 fontWeight = FontWeight.SemiBold,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
-                                text = "Interface translation",
+                                text = "Step-by-step beam simulation inspector",
                                 style = MaterialTheme.typography.labelLarge,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -120,10 +124,10 @@ fun SettingsScreen(
                     }
 
                     Text(
-                        text = selectedLanguage,
+                        text = "OPEN >",
                         color = AmberPrimary,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp
+                        fontSize = 12.sp
                     )
                 }
             }
