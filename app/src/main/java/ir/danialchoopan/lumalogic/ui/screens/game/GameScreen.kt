@@ -238,7 +238,7 @@ fun GameScreen(
                                     )
                                 }
                                 Text(
-                                    text = if (loc.isPersian) "لمس: چرخش | کشیدن: جابجایی" else "TAP ROTATE | DRAG MOVE",
+                                    text = stringResource(R.string.control_hint),
                                     fontSize = 10.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     letterSpacing = 1.sp,

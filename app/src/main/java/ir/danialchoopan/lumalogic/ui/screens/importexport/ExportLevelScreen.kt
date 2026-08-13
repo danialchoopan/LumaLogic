@@ -29,6 +29,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import ir.danialchoopan.lumalogic.R
 import ir.danialchoopan.lumalogic.di.AppContainer
 import ir.danialchoopan.lumalogic.ui.components.GlowingCard
 import ir.danialchoopan.lumalogic.ui.components.LumaButton
@@ -56,7 +58,7 @@ fun ExportLevelScreen(
     Scaffold(
         topBar = {
             LumaHeader(
-                title = "Export Level: ${level?.name ?: ""}",
+                title = "${stringResource(R.string.title_export_level)}: ${level?.name ?: ""}",
                 onBackClick = onBackClick
             )
         },
@@ -72,7 +74,7 @@ fun ExportLevelScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(
-                text = "Below is the JSON schema configuration for this puzzle level. You can copy or share it with others.",
+                text = stringResource(R.string.export_prompt),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -97,7 +99,7 @@ fun ExportLevelScreen(
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 LumaButton(
-                    text = "Copy JSON",
+                    text = stringResource(R.string.copy_json),
                     onClick = { copyToClipboard() },
                     icon = Icons.Default.ContentCopy,
                     modifier = Modifier.weight(1f),

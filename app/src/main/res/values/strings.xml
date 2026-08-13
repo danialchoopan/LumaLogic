@@ -125,6 +125,21 @@
     <string name="resume">Resume</string>
 
     <!-- About & Credits -->
+    <string name="filter_all">ALL</string>
+    <string name="search_placeholder">Search levels...</string>
+    <string name="favorites">Favorites</string>
+    <string name="targets">Targets</string>
+    <string name="control_hint">TAP ROTATE | DRAG MOVE</string>
+    <string name="title_import_level">Import Puzzle Level</string>
+    <string name="title_export_level">Export Level</string>
+    <string name="paste_clipboard">Paste Clipboard</string>
+    <string name="validate_and_import">Validate &amp; Import</string>
+    <string name="copy_json">Copy JSON</string>
+    <string name="import_prompt">Paste a level JSON configuration below to import a custom puzzle.</string>
+    <string name="export_prompt">Below is the JSON schema configuration for this puzzle level. You can copy or share it with others.</string>
+    <string name="import_success">Import Successful!</string>
+    <string name="import_failed">Import Failed - Structural Errors</string>
+
     <string name="about_created_by">Created by Danial Choopan</string>
     <string name="about_version">Version 1.0.5</string>
     <string name="about_desc">LumaLogic is a optical logic puzzle game. Route light beams across grid matrices using mirrors, splitters, RGB filters, and logic gates.</string>

@@ -125,6 +125,21 @@
     <string name="resume">ادامه بازی</string>
 
     <!-- About & Credits -->
+    <string name="filter_all">همه</string>
+    <string name="search_placeholder">جستجوی مراحل...</string>
+    <string name="favorites">علاقه‌مندی‌ها</string>
+    <string name="targets">هدف‌ها</string>
+    <string name="control_hint">لمس: چرخش | کشیدن: جابه‌جایی</string>
+    <string name="title_import_level">ورود مرحله معما</string>
+    <string name="title_export_level">خروجی مرحله</string>
+    <string name="paste_clipboard">جای‌گذاری از حافظه</string>
+    <string name="validate_and_import">اعتبارسنجی و ورود</string>
+    <string name="copy_json">کپی JSON</string>
+    <string name="import_prompt">کد JSON مرحله را در کادر زیر قرار دهید تا وارد شود.</string>
+    <string name="export_prompt">در زیر پیکربندی JSON این مرحله قرار دارد. می‌توانید آن را کپی کرده یا به اشتراک بگذارید.</string>
+    <string name="import_success">ورود مرحله با موفقیت انجام شد!</string>
+    <string name="import_failed">خطا در ورود - اشکالات ساختاری</string>
+
     <string name="about_created_by">ساخته‌شده توسط دانیال چوپان</string>
     <string name="about_version">نسخه ۱.۰.۵</string>
     <string name="about_desc">LumaLogic یک بازی معمایی نوری است. پرتوهای لیزر را با آینه‌ها، منشورها، فیلترهای رنگی و دروازه‌های منطقی هدایت کنید.</string>

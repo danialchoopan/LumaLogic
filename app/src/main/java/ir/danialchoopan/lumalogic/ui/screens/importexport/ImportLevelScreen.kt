@@ -45,6 +45,8 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import ir.danialchoopan.lumalogic.R
 import ir.danialchoopan.lumalogic.data.model.Level
 import ir.danialchoopan.lumalogic.di.AppContainer
 import ir.danialchoopan.lumalogic.domain.level.LevelValidationResult
@@ -87,7 +89,7 @@ fun ImportLevelScreen(
     Scaffold(
         topBar = {
             LumaHeader(
-                title = "Import Puzzle Level",
+                title = stringResource(R.string.title_import_level),
                 onBackClick = onBackClick
             )
         },
@@ -103,7 +105,7 @@ fun ImportLevelScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(
-                text = "Paste a level JSON configuration below to import a custom puzzle.",
+                text = stringResource(R.string.import_prompt),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -113,7 +115,7 @@ fun ImportLevelScreen(
                 horizontalArrangement = Arrangement.End
             ) {
                 LumaButton(
-                    text = "Paste Clipboard",
+                    text = stringResource(R.string.paste_clipboard),
                     onClick = { pasteFromClipboard() },
                     isPrimary = false,
                     testTag = "paste_clipboard_button"
@@ -140,7 +142,7 @@ fun ImportLevelScreen(
             )
 
             LumaButton(
-                text = "Validate & Import",
+                text = stringResource(R.string.validate_and_import),
                 onClick = { processImport() },
                 icon = Icons.Default.FileDownload,
                 modifier = Modifier.fillMaxWidth(),
@@ -171,7 +173,7 @@ fun ImportLevelScreen(
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = if (res.isValid) "Import Successful!" else "Import Failed - Structural Errors",
+                                text = if (res.isValid) stringResource(R.string.import_success) else stringResource(R.string.import_failed),
                                 fontWeight = FontWeight.Bold,
                                 color = if (res.isValid) TargetGreen else Color.Red
                             )
