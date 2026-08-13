@@ -26,13 +26,9 @@ import androidx.compose.material.icons.automirrored.filled.Redo
 import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.FilterAlt
-import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -50,8 +46,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -66,17 +60,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import ir.danialchoopan.lumalogic.R
 import ir.danialchoopan.lumalogic.data.model.CellType
 import ir.danialchoopan.lumalogic.data.model.LightColor
-import ir.danialchoopan.lumalogic.data.model.Position
 import ir.danialchoopan.lumalogic.domain.level.LevelValidationResult
 import ir.danialchoopan.lumalogic.ui.components.GameCanvas
 import ir.danialchoopan.lumalogic.ui.components.GlowingCard
 import ir.danialchoopan.lumalogic.ui.components.LumaHeader
+import ir.danialchoopan.lumalogic.ui.localization.currentLocalization
+import ir.danialchoopan.lumalogic.ui.localization.toPersianDigits
 import ir.danialchoopan.lumalogic.ui.theme.AmberPrimary
 import ir.danialchoopan.lumalogic.ui.theme.MirrorBlue
 import ir.danialchoopan.lumalogic.ui.theme.SourceYellow
@@ -99,6 +96,7 @@ fun LevelEditorScreen(
 
     val snackbarHostState = remember { SnackbarHostState() }
     var showMetadataDialog by remember { mutableStateOf(false) }
+    val loc = currentLocalization()
 
     LaunchedEffect(levelId) {
         if (!levelId.isNullOrBlank()) {
@@ -116,7 +114,7 @@ fun LevelEditorScreen(
     Scaffold(
         topBar = {
             LumaHeader(
-                title = "Level Editor: ${level.name}",
+                title = "${stringResource(R.string.title_editor)}: ${loc.getLevelName(level)}",
                 onBackClick = onBackClick,
                 actions = {
                     IconButton(
@@ -272,20 +270,20 @@ fun LevelEditorScreen(
     }
 }
 
-private fun String?.isNull信Blank(): Boolean = this == null || this.isBlank()
-
 @Composable
 private fun EditorToolPalette(
     selectedTool: EditorTool,
     onToolSelect: (EditorTool) -> Unit
 ) {
+    val loc = currentLocalization()
+
     GlowingCard(
         modifier = Modifier.fillMaxWidth(),
         borderColor = AmberPrimary.copy(alpha = 0.3f)
     ) {
         Column(modifier = Modifier.padding(8.dp)) {
             Text(
-                text = "TOOL PALETTE",
+                text = if (loc.isPersian) "جعبه ابزار" else "TOOL PALETTE",
                 style = MaterialTheme.typography.labelMedium,
                 color = AmberPrimary,
                 fontWeight = FontWeight.Bold,
@@ -299,18 +297,18 @@ private fun EditorToolPalette(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                PaletteToolButton(tool = EditorTool.SELECT, label = "Select", isSelected = selectedTool == EditorTool.SELECT, onToolSelect = onToolSelect)
-                PaletteToolButton(tool = EditorTool.ERASE, label = "Erase", isSelected = selectedTool == EditorTool.ERASE, onToolSelect = onToolSelect)
-                PaletteToolButton(tool = EditorTool.SOURCE, label = "Source", isSelected = selectedTool == EditorTool.SOURCE, onToolSelect = onToolSelect)
-                PaletteToolButton(tool = EditorTool.TARGET, label = "Target", isSelected = selectedTool == EditorTool.TARGET, onToolSelect = onToolSelect)
-                PaletteToolButton(tool = EditorTool.MIRROR, label = "Mirror", isSelected = selectedTool == EditorTool.MIRROR, onToolSelect = onToolSelect)
-                PaletteToolButton(tool = EditorTool.SPLITTER, label = "Splitter", isSelected = selectedTool == EditorTool.SPLITTER, onToolSelect = onToolSelect)
-                PaletteToolButton(tool = EditorTool.FILTER, label = "Filter", isSelected = selectedTool == EditorTool.FILTER, onToolSelect = onToolSelect)
-                PaletteToolButton(tool = EditorTool.WIRE, label = "Wire", isSelected = selectedTool == EditorTool.WIRE, onToolSelect = onToolSelect)
-                PaletteToolButton(tool = EditorTool.BLOCK, label = "Block", isSelected = selectedTool == EditorTool.BLOCK, onToolSelect = onToolSelect)
-                PaletteToolButton(tool = EditorTool.GATE_AND, label = "AND Gate", isSelected = selectedTool == EditorTool.GATE_AND, onToolSelect = onToolSelect)
-                PaletteToolButton(tool = EditorTool.GATE_OR, label = "OR Gate", isSelected = selectedTool == EditorTool.GATE_OR, onToolSelect = onToolSelect)
-                PaletteToolButton(tool = EditorTool.GATE_NOT, label = "NOT Gate", isSelected = selectedTool == EditorTool.GATE_NOT, onToolSelect = onToolSelect)
+                PaletteToolButton(tool = EditorTool.SELECT, label = if (loc.isPersian) "انتخاب" else "Select", isSelected = selectedTool == EditorTool.SELECT, onToolSelect = onToolSelect)
+                PaletteToolButton(tool = EditorTool.ERASE, label = if (loc.isPersian) "پاک‌کن" else "Erase", isSelected = selectedTool == EditorTool.ERASE, onToolSelect = onToolSelect)
+                PaletteToolButton(tool = EditorTool.SOURCE, label = if (loc.isPersian) "منبع نور" else "Source", isSelected = selectedTool == EditorTool.SOURCE, onToolSelect = onToolSelect)
+                PaletteToolButton(tool = EditorTool.TARGET, label = if (loc.isPersian) "هدف" else "Target", isSelected = selectedTool == EditorTool.TARGET, onToolSelect = onToolSelect)
+                PaletteToolButton(tool = EditorTool.MIRROR, label = if (loc.isPersian) "آینه" else "Mirror", isSelected = selectedTool == EditorTool.MIRROR, onToolSelect = onToolSelect)
+                PaletteToolButton(tool = EditorTool.SPLITTER, label = if (loc.isPersian) "شکافنده" else "Splitter", isSelected = selectedTool == EditorTool.SPLITTER, onToolSelect = onToolSelect)
+                PaletteToolButton(tool = EditorTool.FILTER, label = if (loc.isPersian) "فیلتر" else "Filter", isSelected = selectedTool == EditorTool.FILTER, onToolSelect = onToolSelect)
+                PaletteToolButton(tool = EditorTool.WIRE, label = if (loc.isPersian) "سیم" else "Wire", isSelected = selectedTool == EditorTool.WIRE, onToolSelect = onToolSelect)
+                PaletteToolButton(tool = EditorTool.BLOCK, label = if (loc.isPersian) "مانع" else "Block", isSelected = selectedTool == EditorTool.BLOCK, onToolSelect = onToolSelect)
+                PaletteToolButton(tool = EditorTool.GATE_AND, label = "AND", isSelected = selectedTool == EditorTool.GATE_AND, onToolSelect = onToolSelect)
+                PaletteToolButton(tool = EditorTool.GATE_OR, label = "OR", isSelected = selectedTool == EditorTool.GATE_OR, onToolSelect = onToolSelect)
+                PaletteToolButton(tool = EditorTool.GATE_NOT, label = "NOT", isSelected = selectedTool == EditorTool.GATE_NOT, onToolSelect = onToolSelect)
             }
         }
     }
@@ -348,6 +346,8 @@ private fun PropertyInspectorCard(
     onOptionalTargetToggle: (Boolean) -> Unit,
     onFilterColorSelect: (LightColor) -> Unit
 ) {
+    val loc = currentLocalization()
+
     GlowingCard(
         modifier = Modifier
             .fillMaxWidth()
@@ -364,7 +364,7 @@ private fun PropertyInspectorCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "COMPONENT PROPERTIES (${cell.type.name} at ${cell.row},${cell.column})",
+                    text = "${if (loc.isPersian) "ویژگی قطعه" else "PROPERTIES"} (${cell.type.name} ${loc.formatNumber(cell.row)},${loc.formatNumber(cell.column)})",
                     style = MaterialTheme.typography.titleSmall,
                     color = AmberPrimary,
                     fontWeight = FontWeight.Bold
@@ -376,14 +376,14 @@ private fun PropertyInspectorCard(
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                         modifier = Modifier.testTag("rotate_component_button")
                     ) {
-                        Text("Rotate (${cell.rotation.degrees}°)", fontSize = 11.sp, color = AmberPrimary)
+                        Text("${if (loc.isPersian) "چرخش" else "Rotate"} (${loc.formatNumber(cell.rotation.degrees)}°)", fontSize = 11.sp, color = AmberPrimary)
                     }
                 }
             }
 
             when (cell.type) {
                 CellType.SOURCE -> {
-                    Text("Source Light Color:", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(if (loc.isPersian) "رنگ نور منبع:" else "Source Light Color:", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     ColorPickerRow(
                         selectedColor = cell.lightColor ?: LightColor.WHITE,
                         onColorSelect = onSourceColorSelect
@@ -391,7 +391,7 @@ private fun PropertyInspectorCard(
                 }
 
                 CellType.TARGET -> {
-                    Text("Target Required Color:", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(if (loc.isPersian) "رنگ مورد نیاز هدف:" else "Target Required Color:", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     ColorPickerRow(
                         selectedColor = cell.requiredColor ?: LightColor.WHITE,
                         onColorSelect = onTargetColorSelect
@@ -402,12 +402,12 @@ private fun PropertyInspectorCard(
                             onCheckedChange = onOptionalTargetToggle,
                             colors = CheckboxDefaults.colors(checkedColor = AmberPrimary)
                         )
-                        Text("Optional Target (for bonus score)", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface)
+                        Text(if (loc.isPersian) "هدف اختیاری (امتیاز بونوس)" else "Optional Target (for bonus score)", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface)
                     }
                 }
 
                 CellType.FILTER -> {
-                    Text("Accepted Filter Color:", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(if (loc.isPersian) "رنگ فیلتر عبوری:" else "Accepted Filter Color:", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     ColorPickerRow(
                         selectedColor = cell.acceptedColor ?: LightColor.RED,
                         onColorSelect = onFilterColorSelect
@@ -458,6 +458,8 @@ private fun ValidationResultCard(
     result: LevelValidationResult,
     onDismiss: () -> Unit
 ) {
+    val loc = currentLocalization()
+
     Card(
         colors = CardDefaults.cardColors(
             containerColor = if (result.isValid) TargetGreen.copy(alpha = 0.15f) else Color.Red.copy(alpha = 0.15f)
@@ -486,7 +488,7 @@ private fun ValidationResultCard(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = if (result.isValid) "Level Valid" else "Level Validation Errors",
+                        text = if (result.isValid) (if (loc.isPersian) "مرحله معتبر است" else "Level Valid") else (if (loc.isPersian) "خطاهای اعتبارسنجی" else "Level Validation Errors"),
                         fontWeight = FontWeight.Bold,
                         color = if (result.isValid) TargetGreen else Color.Red
                     )
@@ -518,48 +520,49 @@ private fun LevelMetadataDialog(
     var desc by remember { mutableStateOf(currentLevel.description) }
     var rowsStr by remember { mutableStateOf(currentLevel.rows.toString()) }
     var colsStr by remember { mutableStateOf(currentLevel.columns.toString()) }
+    val loc = currentLocalization()
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Level Settings", fontWeight = FontWeight.Bold, color = AmberPrimary) },
+        title = { Text(if (loc.isPersian) "تنظیمات مرحله" else "Level Settings", fontWeight = FontWeight.Bold, color = AmberPrimary) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("Level Name") },
+                    label = { Text(if (loc.isPersian) "نام مرحله" else "Level Name") },
                     colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = AmberPrimary)
                 )
                 OutlinedTextField(
                     value = author,
                     onValueChange = { author = it },
-                    label = { Text("Author") },
+                    label = { Text(if (loc.isPersian) "سازنده" else "Author") },
                     colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = AmberPrimary)
                 )
                 OutlinedTextField(
                     value = difficulty,
                     onValueChange = { difficulty = it },
-                    label = { Text("Difficulty (Easy/Medium/Hard)") },
+                    label = { Text(if (loc.isPersian) "درجه سختی" else "Difficulty (Easy/Medium/Hard)") },
                     colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = AmberPrimary)
                 )
                 OutlinedTextField(
                     value = desc,
                     onValueChange = { desc = it },
-                    label = { Text("Description") },
+                    label = { Text(if (loc.isPersian) "توضیحات" else "Description") },
                     colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = AmberPrimary)
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedTextField(
                         value = rowsStr,
                         onValueChange = { rowsStr = it },
-                        label = { Text("Rows") },
+                        label = { Text(if (loc.isPersian) "سطرها" else "Rows") },
                         modifier = Modifier.weight(1f),
                         colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = AmberPrimary)
                     )
                     OutlinedTextField(
                         value = colsStr,
                         onValueChange = { colsStr = it },
-                        label = { Text("Columns") },
+                        label = { Text(if (loc.isPersian) "ستون‌ها" else "Columns") },
                         modifier = Modifier.weight(1f),
                         colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = AmberPrimary)
                     )
@@ -575,12 +578,12 @@ private fun LevelMetadataDialog(
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = AmberPrimary)
             ) {
-                Text("Apply", color = Color.Black)
+                Text(if (loc.isPersian) "اعمال" else "Apply", color = Color.Black)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(R.string.cancel), color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         },
         containerColor = MaterialTheme.colorScheme.surfaceVariant

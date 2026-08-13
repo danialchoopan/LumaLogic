@@ -1,7 +1,6 @@
 package ir.danialchoopan.lumalogic.ui.screens.levelselect
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,7 +17,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -29,7 +27,6 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.FileUpload
-import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
@@ -60,15 +57,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import ir.danialchoopan.lumalogic.R
 import ir.danialchoopan.lumalogic.data.model.Level
 import ir.danialchoopan.lumalogic.data.model.LevelProgress
 import ir.danialchoopan.lumalogic.di.AppContainer
 import ir.danialchoopan.lumalogic.ui.components.GlowingCard
 import ir.danialchoopan.lumalogic.ui.components.LumaButton
 import ir.danialchoopan.lumalogic.ui.components.LumaHeader
+import ir.danialchoopan.lumalogic.ui.localization.currentLocalization
 import ir.danialchoopan.lumalogic.ui.theme.AmberPrimary
 import ir.danialchoopan.lumalogic.ui.theme.TargetGreen
 
@@ -95,6 +95,7 @@ fun LevelSelectScreen(
 
     val favRepo = remember { AppContainer.favoriteLevelRepository }
     val chapterRepo = remember { AppContainer.chapterRepository }
+    val loc = currentLocalization()
 
     val chapter = remember(chapterId) {
         if (chapterId != null) chapterRepo.getChapter(chapterId) else null
@@ -121,7 +122,10 @@ fun LevelSelectScreen(
     Scaffold(
         topBar = {
             LumaHeader(
-                title = chapter?.let { "Chapter ${it.number}: ${it.name}" } ?: "Select Puzzle Level",
+                title = chapter?.let {
+                    if (loc.isPersian) "فصل ${loc.formatNumber(it.number)}: ${loc.getChapterName(it)}"
+                    else "Chapter ${it.number}: ${it.name}"
+                } ?: stringResource(R.string.title_levels),
                 onBackClick = onBackClick,
                 actions = {
                     IconButton(
@@ -149,7 +153,7 @@ fun LevelSelectScreen(
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
-                placeholder = { Text("Search levels...") },
+                placeholder = { Text(if (loc.isPersian) "جستجوی مراحل..." else "Search levels...") },
                 leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = AmberPrimary) },
                 singleLine = true,
                 shape = RoundedCornerShape(12.dp),
@@ -174,7 +178,7 @@ fun LevelSelectScreen(
                     FilterChip(
                         selected = selectedDifficultyFilter == filter,
                         onClick = { selectedDifficultyFilter = filter },
-                        label = { Text(filter, fontSize = 11.sp, fontWeight = FontWeight.Bold) },
+                        label = { Text(loc.getDifficultyLabel(filter), fontSize = 11.sp, fontWeight = FontWeight.Bold) },
                         modifier = Modifier.testTag("filter_chip_$filter")
                     )
                 }
@@ -192,19 +196,19 @@ fun LevelSelectScreen(
                     Tab(
                         selected = selectedTabIndex == 0,
                         onClick = { selectedTabIndex = 0 },
-                        text = { Text("Built-in (${builtInLevels.size})", fontWeight = FontWeight.Bold) },
+                        text = { Text("${if (loc.isPersian) "اصلی" else "Built-in"} (${loc.formatNumber(builtInLevels.size)})", fontWeight = FontWeight.Bold) },
                         modifier = Modifier.testTag("tab_builtin_levels")
                     )
                     Tab(
                         selected = selectedTabIndex == 1,
                         onClick = { selectedTabIndex = 1 },
-                        text = { Text("My Levels (${userLevels.size})", fontWeight = FontWeight.Bold) },
+                        text = { Text("${if (loc.isPersian) "ساخته‌شده" else "My Levels"} (${loc.formatNumber(userLevels.size)})", fontWeight = FontWeight.Bold) },
                         modifier = Modifier.testTag("tab_user_levels")
                     )
                     Tab(
                         selected = selectedTabIndex == 2,
                         onClick = { selectedTabIndex = 2 },
-                        text = { Text("Completed (${completedLevels.size})", fontWeight = FontWeight.Bold) },
+                        text = { Text("${if (loc.isPersian) "تکمیل‌شده" else "Completed"} (${loc.formatNumber(completedLevels.size)})", fontWeight = FontWeight.Bold) },
                         modifier = Modifier.testTag("tab_completed_levels")
                     )
                 }
@@ -221,7 +225,7 @@ fun LevelSelectScreen(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     LumaButton(
-                        text = "New Level",
+                        text = if (loc.isPersian) "مرحله جدید" else "New Level",
                         onClick = onCreateNewLevel,
                         icon = Icons.Default.Add,
                         modifier = Modifier.weight(1f),
@@ -229,7 +233,7 @@ fun LevelSelectScreen(
                     )
                     Spacer(modifier = Modifier.width(12.dp))
                     LumaButton(
-                        text = "Import",
+                        text = if (loc.isPersian) "ورودی فایل" else "Import",
                         onClick = onImportLevel,
                         icon = Icons.Default.FileDownload,
                         modifier = Modifier.weight(1f),
@@ -248,7 +252,7 @@ fun LevelSelectScreen(
             }
 
             val filteredList = rawList.filter { lvl ->
-                val matchesSearch = searchQuery.isBlank() || lvl.name.contains(searchQuery, ignoreCase = true)
+                val matchesSearch = searchQuery.isBlank() || lvl.name.contains(searchQuery, ignoreCase = true) || loc.getLevelName(lvl).contains(searchQuery, ignoreCase = true)
                 val matchesDifficulty = when (selectedDifficultyFilter) {
                     "ALL" -> true
                     "FAVORITES" -> favoritesSet.contains(lvl.levelId)
@@ -265,7 +269,7 @@ fun LevelSelectScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "No levels found matching criteria.",
+                        text = if (loc.isPersian) "هیچ مرحلی منطبق یافت نشد." else "No levels found matching criteria.",
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -306,24 +310,24 @@ fun LevelSelectScreen(
             onDismissRequest = { previewLevel = null },
             title = {
                 Text(
-                    text = level.name,
+                    text = loc.getLevelName(level),
                     fontWeight = FontWeight.Bold,
-                    fontSize = 20.sp,
+                    fontSize = 18.sp,
                     color = AmberPrimary
                 )
             },
             text = {
                 Column {
-                    Text(text = level.description.ifBlank { "Optical puzzle challenge." }, fontSize = 14.sp)
+                    Text(text = level.description.ifBlank { if (loc.isPersian) "معمای نوری ماتریسی" else "Optical puzzle challenge." }, fontSize = 14.sp)
                     Spacer(modifier = Modifier.height(12.dp))
-                    Text(text = "Difficulty: ${level.difficulty}", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
-                    Text(text = "Grid Size: ${level.rows}x${level.columns}", fontSize = 13.sp)
-                    Text(text = "Max Energy: ${level.maximumEnergy}", fontSize = 13.sp)
-                    Text(text = "Expected Moves: ${level.expectedMoves}", fontSize = 13.sp)
+                    Text(text = "${if (loc.isPersian) "سختی:" else "Difficulty:"} ${loc.getDifficultyLabel(level.difficulty)}", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                    Text(text = "${if (loc.isPersian) "ابعاد شبکه:" else "Grid Size:"} ${loc.formatNumber(level.rows)}x${loc.formatNumber(level.columns)}", fontSize = 13.sp)
+                    Text(text = "${if (loc.isPersian) "حداکثر انرژی:" else "Max Energy:"} ${loc.formatNumber(level.maximumEnergy)}", fontSize = 13.sp)
+                    Text(text = "${if (loc.isPersian) "حرکات پیش‌بینی‌شده:" else "Expected Moves:"} ${loc.formatNumber(level.expectedMoves)}", fontSize = 13.sp)
                     if (progress?.completed == true) {
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text(text = "Best Score: ${progress.bestScore}", fontWeight = FontWeight.Bold, color = TargetGreen, fontSize = 13.sp)
-                        Text(text = "Stars Earned: ${progress.stars} / 3 ⭐", fontWeight = FontWeight.Bold, color = Color(0xFFFFC107), fontSize = 13.sp)
+                        Text(text = "${if (loc.isPersian) "بهترین امتیاز:" else "Best Score:"} ${loc.formatNumber(progress.bestScore)}", fontWeight = FontWeight.Bold, color = TargetGreen, fontSize = 13.sp)
+                        Text(text = "${if (loc.isPersian) "ستاره‌ها:" else "Stars Earned:"} ${loc.formatNumber(progress.stars)} / ${loc.formatNumber(3)} ⭐", fontWeight = FontWeight.Bold, color = Color(0xFFFFC107), fontSize = 13.sp)
                     }
                 }
             },
@@ -336,12 +340,12 @@ fun LevelSelectScreen(
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = AmberPrimary)
                 ) {
-                    Text("START PUZZLE", color = Color.Black, fontWeight = FontWeight.Bold)
+                    Text(if (loc.isPersian) "شروع بازی" else "START PUZZLE", color = Color.Black, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { previewLevel = null }) {
-                    Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.cancel), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             },
             containerColor = MaterialTheme.colorScheme.surfaceVariant,
@@ -353,9 +357,9 @@ fun LevelSelectScreen(
     levelToDelete?.let { level ->
         AlertDialog(
             onDismissRequest = { levelToDelete = null },
-            title = { Text("Delete Custom Level?", fontWeight = FontWeight.Bold, color = AmberPrimary) },
+            title = { Text(stringResource(R.string.confirm_reset_custom_title), fontWeight = FontWeight.Bold, color = AmberPrimary) },
             text = {
-                Text("Are you sure you want to delete '${level.name}'? This action cannot be undone.")
+                Text("${if (loc.isPersian) "آیا از حذف مرحله" else "Are you sure you want to delete"} '${loc.getLevelName(level)}' ${if (loc.isPersian) "اطمینان دارید؟" else "? This action cannot be undone."}")
             },
             confirmButton = {
                 Button(
@@ -366,12 +370,12 @@ fun LevelSelectScreen(
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 ) {
-                    Text("Delete")
+                    Text(stringResource(R.string.reset))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { levelToDelete = null }) {
-                    Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.cancel), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             },
             containerColor = MaterialTheme.colorScheme.surfaceVariant,
@@ -392,6 +396,7 @@ private fun LevelCard(
     onDeleteClick: () -> Unit
 ) {
     val isCompleted = progress?.completed == true
+    val loc = currentLocalization()
 
     GlowingCard(
         modifier = Modifier
@@ -422,7 +427,7 @@ private fun LevelCard(
                     }
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = level.name,
+                        text = loc.getLevelName(level),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
@@ -451,7 +456,7 @@ private fun LevelCard(
                         .padding(horizontal = 8.dp, vertical = 2.dp)
                 ) {
                     Text(
-                        text = level.difficulty.uppercase(),
+                        text = loc.getDifficultyLabel(level.difficulty),
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
                         color = when (level.difficulty.lowercase()) {
@@ -466,7 +471,7 @@ private fun LevelCard(
             Spacer(modifier = Modifier.height(4.dp))
 
             Text(
-                text = level.description.ifBlank { "Grid size: ${level.rows}x${level.columns} • Author: ${level.author}" },
+                text = level.description.ifBlank { "${if (loc.isPersian) "ابعاد:" else "Grid size:"} ${loc.formatNumber(level.rows)}x${loc.formatNumber(level.columns)}" },
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 2
@@ -490,7 +495,7 @@ private fun LevelCard(
                         }
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = "Score: ${progress.bestScore}",
+                            text = "${if (loc.isPersian) "امتیاز:" else "Score:"} ${loc.formatNumber(progress.bestScore)}",
                             style = MaterialTheme.typography.labelSmall,
                             color = AmberPrimary,
                             fontWeight = FontWeight.Bold
@@ -498,7 +503,7 @@ private fun LevelCard(
                     }
 
                     Text(
-                        text = "Best Time: ${progress.bestTimeSeconds}s",
+                        text = "${if (loc.isPersian) "زمان:" else "Best Time:"} ${loc.formatNumber(progress.bestTimeSeconds)}s",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -568,7 +573,7 @@ private fun LevelCard(
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("PLAY", color = Color.Black, fontWeight = FontWeight.Bold)
+                    Text(if (loc.isPersian) "بازی" else "PLAY", color = Color.Black, fontWeight = FontWeight.Bold)
                 }
             }
         }

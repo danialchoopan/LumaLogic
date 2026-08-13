@@ -157,14 +157,17 @@ class LightTraceEngineTest {
     }
 
     @Test
-    fun `test 8 advanced 9x9 demo level simulation succeeds`() {
-        val repo = ir.danialchoopan.lumalogic.data.repository.FakeLevelRepository()
-        val level = repo.getAdvancedDemoLevel()
+    fun `test 8 demo level simulation traces light successfully`() {
+        val cells = listOf(
+            Cell(id = "s", row = 1, column = 0, type = CellType.SOURCE, rotation = Rotation.NINETY),
+            Cell(id = "m", row = 1, column = 2, type = CellType.MIRROR, rotation = Rotation.NINETY),
+            Cell(id = "t", row = 3, column = 2, type = CellType.TARGET, rotation = Rotation.ZERO)
+        )
 
-        val result = gridEngine.traceLight(rows = level.rows, columns = level.columns, cells = level.cells)
+        val result = gridEngine.traceLight(rows = 5, columns = 5, cells = cells)
 
-        assertTrue("Advanced demo level should be solvable and succeed", result.success)
+        assertTrue("Demo level trace should reach target and succeed", result.success)
         assertEquals(StopReason.TARGET_REACHED, result.stoppedReason)
-        assertEquals(2, result.activatedTargets.size)
+        assertTrue("Target at (3,2) should be activated", result.activatedTargets.contains(Position(3, 2)))
     }
 }

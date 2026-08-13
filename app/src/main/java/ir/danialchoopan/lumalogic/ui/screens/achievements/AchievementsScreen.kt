@@ -48,12 +48,15 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import ir.danialchoopan.lumalogic.R
 import ir.danialchoopan.lumalogic.data.model.Achievement
 import ir.danialchoopan.lumalogic.di.AppContainer
 import ir.danialchoopan.lumalogic.ui.components.LumaHeader
+import ir.danialchoopan.lumalogic.ui.localization.currentLocalization
 import ir.danialchoopan.lumalogic.ui.theme.AmberPrimary
 import ir.danialchoopan.lumalogic.ui.theme.TargetGreen
 
@@ -64,6 +67,7 @@ fun AchievementsScreen(
 ) {
     val achRepo = remember { AppContainer.achievementRepository }
     val progressManager = remember { AppContainer.levelProgressManager }
+    val loc = currentLocalization()
 
     var achievements by remember { mutableStateOf<List<Achievement>>(emptyList()) }
 
@@ -78,7 +82,7 @@ fun AchievementsScreen(
     Scaffold(
         topBar = {
             LumaHeader(
-                title = "Achievements ($unlockedCount/${achievements.size})",
+                title = "${stringResource(R.string.title_achievements)} (${loc.formatNumber(unlockedCount)}/${loc.formatNumber(achievements.size)})",
                 onBackClick = onBackClick
             )
         },
@@ -101,6 +105,7 @@ fun AchievementsScreen(
 @Composable
 fun AchievementCard(achievement: Achievement) {
     val isUnlocked = achievement.isUnlocked
+    val loc = currentLocalization()
 
     val iconVector: ImageVector = when (achievement.iconName) {
         "Lightbulb" -> Icons.Default.Lightbulb
@@ -155,14 +160,14 @@ fun AchievementCard(achievement: Achievement) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = achievement.title,
+                        text = loc.getAchievementTitle(achievement),
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp,
                         color = if (isUnlocked) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     if (isUnlocked) {
                         Text(
-                            text = "UNLOCKED",
+                            text = if (loc.isPersian) "آزادشده" else "UNLOCKED",
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold,
                             color = TargetGreen
@@ -173,7 +178,7 @@ fun AchievementCard(achievement: Achievement) {
                 Spacer(modifier = Modifier.height(4.dp))
 
                 Text(
-                    text = achievement.description,
+                    text = loc.getAchievementDescription(achievement),
                     fontSize = 13.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     lineHeight = 18.sp
@@ -197,7 +202,7 @@ fun AchievementCard(achievement: Achievement) {
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "${achievement.currentCount}/${achievement.targetCount}",
+                            text = "${loc.formatNumber(achievement.currentCount)}/${loc.formatNumber(achievement.targetCount)}",
                             fontSize = 11.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

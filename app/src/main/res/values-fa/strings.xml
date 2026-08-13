@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">LumaLogic</string>
+    <string name="app_version">۱.۰.۵</string>
+    <string name="developer_name">دانیال چوپان</string>
+    <string name="package_name">ir.danialchoopan.lumalogic</string>
+
+    <!-- Navigation & Titles -->
+    <string name="title_home">LumaLogic</string>
+    <string name="title_chapters">فصل‌های بازی</string>
+    <string name="title_levels">انتخاب مرحله</string>
+    <string name="title_game">ماتریس معما</string>
+    <string name="title_daily_puzzle">معمای روزانه</string>
+    <string name="title_achievements">دستاوردها</string>
+    <string name="title_profile">پروفایل بازیکن</string>
+    <string name="title_editor">ویرایشگر مرحله</string>
+    <string name="title_settings">تنظیمات</string>
+    <string name="title_about">درباره LumaLogic</string>
+    <string name="title_tutorial">راهنما و آموزش</string>
+    <string name="title_debug">اشکال‌زدایی پرتو</string>
+
+    <!-- Home Screen -->
+    <string name="play_campaign">شروع مرحله‌ها</string>
+    <string name="select_chapter">انتخاب فصل</string>
+    <string name="daily_challenge">چالش روزانه</string>
+    <string name="my_custom_levels">مراحل ساخته‌شده</string>
+    <string name="overall_progress">پیشرفت کلی</string>
+    <string name="stars_collected">ستاره‌های دریافت شده</string>
+    <string name="levels_completed">مراحل تکمیل‌شده</string>
+
+    <!-- Settings Sections & Options -->
+    <string name="language_setting">زبان / Language</string>
+    <string name="language_english">English (انگلیسی)</string>
+    <string name="language_persian">فارسی</string>
+
+    <string name="appearance_section">ظاهر و پوسته</string>
+    <string name="theme_mode">حالت پوسته</string>
+    <string name="theme_system">پیش‌فرض سیستم</string>
+    <string name="theme_light">پوسته روشن</string>
+    <string name="theme_dark">پوسته تاریک</string>
+    <string name="beam_glow">درخشش نور</string>
+    <string name="grid_visibility">خطوط شبکه</string>
+    <string name="grid_opacity">شفافیت شبکه</string>
+
+    <string name="accessibility_section">دسترسی‌پذیری</string>
+    <string name="high_contrast">حالت کنتراست بالا</string>
+    <string name="reduce_motion">کاهش پویانمایی‌ها</string>
+    <string name="text_size">اندازه متن</string>
+    <string name="text_size_small">کوچک</string>
+    <string name="text_size_normal">معمولی</string>
+    <string name="text_size_large">بزرگ</string>
+    <string name="text_size_xlarge">خیلی بزرگ</string>
+    <string name="colorblind_mode">حالت کوررنگی (نمادها)</string>
+
+    <string name="audio_haptics_section">صدا و لرزش</string>
+    <string name="sound_effects">جلوه‌های صوتی</string>
+    <string name="sfx_volume">میزان صدای جلوه‌ها</string>
+    <string name="haptic_feedback">بازخورد لمسی (لرزش)</string>
+    <string name="haptic_intensity">شدت لرزش</string>
+    <string name="intensity_low">کم</string>
+    <string name="intensity_medium">متوسط</string>
+    <string name="intensity_high">زیاد</string>
+
+    <string name="gameplay_section">تنظیمات بازی</string>
+    <string name="confirm_restart">تأیید شروع مجدد</string>
+    <string name="confirm_exit">تأیید خروج از مرحله</string>
+    <string name="auto_advance">ورود خودکار به مرحله بعدی</string>
+    <string name="show_hints">موتور راهنما</string>
+    <string name="show_tutorial">نمایش راهنمای آموزش</string>
+
+    <string name="hud_section">سفارشی‌سازی رابط کاربری</string>
+    <string name="show_move_counter">شمارشگر حرکت‌ها</string>
+    <string name="show_energy_counter">گیج انرژی</string>
+    <string name="show_timer">زمان‌سنج مرحله</string>
+    <string name="show_score">شمارشگر امتیاز</string>
+    <string name="show_star_reqs">شرایط دریافت ستاره</string>
+
+    <string name="data_section">مدیریت داده‌ها</string>
+    <string name="export_custom_levels">خروجی مراحل دلخواه</string>
+    <string name="import_custom_levels">ورودی مراحل دلخواه</string>
+    <string name="reset_custom_levels">حذف مراحل دلخواه</string>
+    <string name="reset_progress">بازنشانی پیشرفت مراحل</string>
+    <string name="reset_settings">بازنشانی تنظیمات به پیش‌فرض</string>
+
+    <!-- Dialogs & Confirmations -->
+    <string name="confirm_reset_progress_title">بازنشانی پیشرفت مراحل؟</string>
+    <string name="confirm_reset_progress_msg">تمام مراحل تکمیل‌شده، ستاره‌ها، امتیازات و دستاوردها پاک خواهند شد. این عمل قابل بازگشت نیست.</string>
+    <string name="confirm_reset_settings_title">بازنشانی تمام تنظیمات؟</string>
+    <string name="confirm_reset_settings_msg">تمام تنظیمات زبان، ظاهر و صدا به حالت اولیه بازخواهند گشت.</string>
+    <string name="confirm_reset_custom_title">حذف مراحل ساخته‌شده؟</string>
+    <string name="confirm_reset_custom_msg">تمام مراحل ایجادشده توسط شما به طور کامل پاک خواهند شد.</string>
+    <string name="confirm_restart_title">شروع مجدد مرحله؟</string>
+    <string name="confirm_restart_msg">آیا از بازنشانی صفحه معما به حالت اولیه اطمینان دارید؟</string>
+    <string name="confirm_exit_title">خروج به لیست مراحل؟</string>
+    <string name="confirm_exit_msg">پیشرفت ذخیره‌نشده شما در این مرحله از دست خواهد رفت.</string>
+    <string name="cancel">انصراف</string>
+    <string name="reset">بازنشانی</string>
+    <string name="confirm">تأیید</string>
+
+    <!-- Game Dialog Strings -->
+    <string name="win_title">مرحله حل شد!</string>
+    <string name="win_retry">تلاش مجدد</string>
+    <string name="win_next_level">مرحله بعدی</string>
+    <string name="lose_title">انرژی تمام شد</string>
+    <string name="lose_retry">تلاش مجدد مرحله</string>
+    <string name="pause_title">بازی متوقف شد</string>
+    <string name="pause_resume">ادامه بازی</string>
+    <string name="pause_restart">شروع مجدد مرحله</string>
+    <string name="pause_exit">خروج به لیست مراحل</string>
+
+    <!-- Game HUD & Controls -->
+    <string name="undo">واکشی (Undo)</string>
+    <string name="redo">انجام مجدد (Redo)</string>
+    <string name="hint">راهنما</string>
+    <string name="moves">حرکت‌ها</string>
+    <string name="energy">انرژی</string>
+    <string name="time">زمان</string>
+    <string name="score">امتیاز</string>
+    <string name="target_lit">هدف‌های فعال</string>
+    <string name="level_cleared">مرحله حل شد!</string>
+    <string name="level_failed">انرژی تمام شد!</string>
+    <string name="next_level">مرحله بعدی</string>
+    <string name="retry">تلاش مجدد</string>
+    <string name="pause_game">بازی متوقف شد</string>
+    <string name="resume">ادامه بازی</string>
+
+    <!-- About & Credits -->
+    <string name="about_created_by">ساخته‌شده توسط دانیال چوپان</string>
+    <string name="about_version">نسخه ۱.۰.۵</string>
+    <string name="about_desc">LumaLogic یک بازی معمایی نوری است. پرتوهای لیزر را با آینه‌ها، منشورها، فیلترهای رنگی و دروازه‌های منطقی هدایت کنید.</string>
+
+    <!-- Tutorials -->
+    <string name="tutorial_intro_title">به LumaLogic خوش آمدید</string>
+    <string name="tutorial_intro_desc">پرتوی نور لیزر را از منبع به گیرنده‌های هدف برسانید تا معما حل شود.</string>
+    <string name="tutorial_mirror_title">آینه‌ها و منشورها</string>
+    <string name="tutorial_mirror_desc">روی قطعات ضربه بزنید تا ۹۰ درجه بچرخند. آینه‌ها نور را منحرف کرده و منشورها آن را تقسیم می‌کنند.</string>
+    <string name="tutorial_filter_title">فیلترهای رنگی و ترکیب نور</string>
+    <string name="tutorial_filter_desc">فیلترها فقط نور همرنگ را عبور می‌دهند. ترکیب نورهای قرمز، سبز و آبی رنگ‌های زرد، ارغوانی و فیروزه‌ای می‌سازد.</string>
+    <string name="tutorial_gate_title">دروازه‌های منطقی نوری</string>
+    <string name="tutorial_gate_desc">دروازه AND نیاز به دو پرتو ورودی دارد، OR با هر پرتو فعال می‌شود و NOT پرتو فعال را معکوس می‌کند.</string>
+    <string name="tutorial_energy_title">مدیریت انرژی و ستاره‌ها</string>
+    <string name="tutorial_energy_desc">هر چرخش انرژی مصرف می‌کند. با حرکت‌های کمتر معما را حل کنید تا ۳ ستاره کامل بگیرید!</string>
+</resources>

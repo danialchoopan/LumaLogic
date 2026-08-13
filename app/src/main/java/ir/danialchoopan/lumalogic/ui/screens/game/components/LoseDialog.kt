@@ -22,17 +22,19 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import ir.danialchoopan.lumalogic.R
+import ir.danialchoopan.lumalogic.ui.localization.currentLocalization
 
 @Composable
 fun LoseDialog(
@@ -43,6 +45,8 @@ fun LoseDialog(
     onLevelSelect: () -> Unit,
     onHome: () -> Unit
 ) {
+    val loc = currentLocalization()
+
     Dialog(
         onDismissRequest = { /* Require button action */ },
         properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false)
@@ -73,7 +77,7 @@ fun LoseDialog(
                 )
 
                 Text(
-                    text = "OUT OF ENERGY",
+                    text = stringResource(R.string.lose_title),
                     style = MaterialTheme.typography.headlineSmall,
                     color = MaterialTheme.colorScheme.error,
                     fontWeight = FontWeight.Black,
@@ -81,7 +85,7 @@ fun LoseDialog(
                 )
 
                 Text(
-                    text = "Energy depleted before activating all targets in $levelName.",
+                    text = if (loc.isPersian) "انرژی پیش از فعال‌سازی تمام اهداف در $levelName به پایان رسید." else "Energy depleted before activating all targets in $levelName.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 8.dp)
@@ -92,12 +96,12 @@ fun LoseDialog(
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Energy Used", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text("$energyUsed", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)
+                        Text(if (loc.isPersian) "انرژی مصرفی" else "Energy Used", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(loc.formatNumber(energyUsed), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)
                     }
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Moves", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text("$movesCount", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                        Text(if (loc.isPersian) "تعداد حرکت" else "Moves", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(loc.formatNumber(movesCount), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                     }
                 }
 
@@ -127,7 +131,7 @@ fun LoseDialog(
                     ) {
                         Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text("Retry Level", fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.lose_retry), fontWeight = FontWeight.Bold)
                     }
                 }
             }

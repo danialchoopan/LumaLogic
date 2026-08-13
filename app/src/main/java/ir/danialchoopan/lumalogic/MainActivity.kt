@@ -6,6 +6,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import ir.danialchoopan.lumalogic.di.AppContainer
 import ir.danialchoopan.lumalogic.ui.navigation.LumaNavGraph
@@ -22,7 +24,8 @@ class MainActivity : ComponentActivity() {
         AppContainer.initialize(this)
         enableEdgeToEdge()
         setContent {
-            LumaLogicTheme {
+            val settingsState by AppContainer.settingsRepository.settings.collectAsState()
+            LumaLogicTheme(settingsData = settingsState) {
                 Surface(
                     modifier = Modifier.fillMaxSize()
                 ) {

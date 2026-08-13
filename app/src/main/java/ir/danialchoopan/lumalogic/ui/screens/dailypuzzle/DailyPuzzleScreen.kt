@@ -18,7 +18,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -31,14 +30,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import ir.danialchoopan.lumalogic.R
 import ir.danialchoopan.lumalogic.di.AppContainer
 import ir.danialchoopan.lumalogic.ui.components.LumaButton
 import ir.danialchoopan.lumalogic.ui.components.LumaHeader
+import ir.danialchoopan.lumalogic.ui.localization.currentLocalization
+import ir.danialchoopan.lumalogic.ui.localization.toPersianDigits
 import ir.danialchoopan.lumalogic.ui.theme.AmberPrimary
 import ir.danialchoopan.lumalogic.ui.theme.TargetGreen
 
@@ -50,6 +52,7 @@ fun DailyPuzzleScreen(
 ) {
     val dailyRepo = remember { AppContainer.dailyPuzzleRepository }
     val progressManager = remember { AppContainer.levelProgressManager }
+    val loc = currentLocalization()
 
     val todayLevel = remember { dailyRepo.getTodayPuzzle() }
     val dateString = remember { dailyRepo.getTodayDateString() }
@@ -59,7 +62,7 @@ fun DailyPuzzleScreen(
     Scaffold(
         topBar = {
             LumaHeader(
-                title = "Daily Puzzle",
+                title = stringResource(R.string.title_daily_puzzle),
                 onBackClick = onBackClick
             )
         },
@@ -109,7 +112,7 @@ fun DailyPuzzleScreen(
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = dateString,
+                            text = dateString.toPersianDigits(loc.isPersian),
                             fontSize = 14.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -119,7 +122,7 @@ fun DailyPuzzleScreen(
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Text(
-                        text = todayLevel.name,
+                        text = loc.getLevelName(todayLevel),
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
@@ -128,7 +131,7 @@ fun DailyPuzzleScreen(
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Text(
-                        text = "A unique optical puzzle refreshed daily. Solve it to boost your streak and earn bonus score!",
+                        text = if (loc.isPersian) "یک معمای نوری منحصربه‌فرد که هر روز به‌روزرسانی می‌شود. آن را حل کنید تا امتیاز ویژه بگیرید!" else "A unique optical puzzle refreshed daily. Solve it to boost your streak and earn bonus score!",
                         fontSize = 13.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(horizontal = 8.dp)
@@ -151,7 +154,7 @@ fun DailyPuzzleScreen(
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "Completed Today! (${progress.stars} ⭐ • ${progress.bestScore} pts)",
+                                text = if (loc.isPersian) "امروز با موفقیت حل شد! (${loc.formatNumber(progress.stars)} ⭐ • ${loc.formatNumber(progress.bestScore)} امتیاز)" else "Completed Today! (${progress.stars} ⭐ • ${progress.bestScore} pts)",
                                 fontWeight = FontWeight.Bold,
                                 color = TargetGreen,
                                 fontSize = 14.sp
@@ -162,7 +165,7 @@ fun DailyPuzzleScreen(
                     Spacer(modifier = Modifier.height(24.dp))
 
                     LumaButton(
-                        text = if (isCompleted) "PLAY AGAIN" else "START DAILY PUZZLE",
+                        text = if (isCompleted) (if (loc.isPersian) "بازی مجدد" else "PLAY AGAIN") else (if (loc.isPersian) "شروع معمای روزانه" else "START DAILY PUZZLE"),
                         onClick = { onPlayClick(todayLevel.levelId) },
                         icon = Icons.Default.PlayArrow,
                         modifier = Modifier.fillMaxWidth(),

@@ -12,14 +12,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.EmojiEvents
-import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Star
@@ -41,11 +39,15 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import ir.danialchoopan.lumalogic.R
 import ir.danialchoopan.lumalogic.di.AppContainer
 import ir.danialchoopan.lumalogic.ui.components.LumaHeader
+import ir.danialchoopan.lumalogic.ui.localization.currentLocalization
+import ir.danialchoopan.lumalogic.ui.localization.toPersianDigits
 import ir.danialchoopan.lumalogic.ui.theme.AmberPrimary
 import ir.danialchoopan.lumalogic.ui.theme.TargetGreen
 
@@ -58,6 +60,7 @@ fun ProfileScreen(
     val progressManager = remember { AppContainer.levelProgressManager }
     val achRepo = remember { AppContainer.achievementRepository }
     val favRepo = remember { AppContainer.favoriteLevelRepository }
+    val loc = currentLocalization()
 
     val achievements = remember { achRepo.getAchievements() }
     val unlockedAchCount = achievements.count { it.isUnlocked }
@@ -68,7 +71,7 @@ fun ProfileScreen(
     Scaffold(
         topBar = {
             LumaHeader(
-                title = "Player Statistics",
+                title = stringResource(R.string.title_profile),
                 onBackClick = onBackClick
             )
         },
@@ -109,14 +112,14 @@ fun ProfileScreen(
                         Spacer(modifier = Modifier.height(12.dp))
 
                         Text(
-                            text = "Luma Logic Optician",
+                            text = if (loc.isPersian) "استاد اپتیک لوما" else "Luma Logic Optician",
                             fontWeight = FontWeight.Bold,
                             fontSize = 20.sp,
                             color = MaterialTheme.colorScheme.onSurface
                         )
 
                         Text(
-                            text = "Master of Beams and Optical Circuits",
+                            text = if (loc.isPersian) "متخصص مهندسی پرتوها و مدارهای نوری" else "Master of Beams and Optical Circuits",
                             fontSize = 13.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -130,13 +133,13 @@ fun ProfileScreen(
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
                                 Text(
-                                    text = "Overall Progression",
+                                    text = stringResource(R.string.overall_progress),
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
-                                    text = "${stats.totalLevelsCompleted} / 256 (${String.format("%.1f", stats.completionPercentage)}%)",
+                                    text = "${loc.formatNumber(stats.totalLevelsCompleted)} / ${loc.formatNumber(256)} (${String.format("%.1f", stats.completionPercentage).toPersianDigits(loc.isPersian)}%)",
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = AmberPrimary
@@ -166,15 +169,15 @@ fun ProfileScreen(
                     ) {
                         StatBox(
                             icon = Icons.Default.Star,
-                            label = "Total Stars",
-                            value = "${stats.totalStars} / 768",
+                            label = if (loc.isPersian) "مجموع ستاره‌ها" else "Total Stars",
+                            value = "${loc.formatNumber(stats.totalStars)} / ${loc.formatNumber(768)}",
                             color = Color(0xFFFFC107),
                             modifier = Modifier.weight(1f)
                         )
                         StatBox(
                             icon = Icons.Default.WorkspacePremium,
-                            label = "Total Score",
-                            value = "${stats.totalScore}",
+                            label = if (loc.isPersian) "مجموع امتیازات" else "Total Score",
+                            value = loc.formatNumber(stats.totalScore),
                             color = TargetGreen,
                             modifier = Modifier.weight(1f)
                         )
@@ -186,15 +189,15 @@ fun ProfileScreen(
                     ) {
                         StatBox(
                             icon = Icons.Default.AutoAwesome,
-                            label = "Chapters Done",
-                            value = "${stats.chaptersCompleted} / 16",
+                            label = if (loc.isPersian) "فصل‌های کامل‌شده" else "Chapters Done",
+                            value = "${loc.formatNumber(stats.chaptersCompleted)} / ${loc.formatNumber(16)}",
                             color = Color(0xFF2196F3),
                             modifier = Modifier.weight(1f)
                         )
                         StatBox(
                             icon = Icons.Default.EmojiEvents,
-                            label = "Achievements",
-                            value = "${stats.achievementsUnlocked} / ${stats.totalAchievements}",
+                            label = stringResource(R.string.title_achievements),
+                            value = "${loc.formatNumber(stats.achievementsUnlocked)} / ${loc.formatNumber(stats.totalAchievements)}",
                             color = Color(0xFFE91E63),
                             modifier = Modifier.weight(1f)
                         )
@@ -206,15 +209,15 @@ fun ProfileScreen(
                     ) {
                         StatBox(
                             icon = Icons.Default.Timer,
-                            label = "Play Time",
-                            value = formatPlayTime(stats.totalPlayTimeSeconds),
+                            label = if (loc.isPersian) "زمان بازی" else "Play Time",
+                            value = formatPlayTime(stats.totalPlayTimeSeconds, loc.isPersian),
                             color = Color(0xFF00BCD4),
                             modifier = Modifier.weight(1f)
                         )
                         StatBox(
                             icon = Icons.Default.Lightbulb,
-                            label = "Hints Used",
-                            value = "${stats.hintsUsed}",
+                            label = if (loc.isPersian) "راهنمایی‌های مصرفی" else "Hints Used",
+                            value = loc.formatNumber(stats.hintsUsed),
                             color = Color(0xFFFF9800),
                             modifier = Modifier.weight(1f)
                         )
@@ -273,10 +276,19 @@ fun StatBox(
     }
 }
 
-private fun formatPlayTime(seconds: Long): String {
-    if (seconds <= 0) return "0m"
+private fun formatPlayTime(seconds: Long, isPersian: Boolean): String {
+    if (seconds <= 0) return if (isPersian) "۰ دقیقه" else "0m"
     val minutes = seconds / 60
     val hours = minutes / 60
     val remainingMinutes = minutes % 60
-    return if (hours > 0) "${hours}h ${remainingMinutes}m" else "${minutes}m"
+    val hStr = if (isPersian) "ساعت" else "h"
+    val mStr = if (isPersian) "دقیقه" else "m"
+
+    val formatNum = { n: Long -> if (isPersian) n.toString().map {
+        when (it) {
+            '0' -> '۰'; '1' -> '۱'; '2' -> '۲'; '3' -> '۳'; '4' -> '۴'; '5' -> '۵'; '6' -> '۶'; '7' -> '۷'; '8' -> '۸'; '9' -> '۹'; else -> it
+        }
+    }.joinToString("") else n.toString() }
+
+    return if (hours > 0) "${formatNum(hours)}$hStr ${formatNum(remainingMinutes)}$mStr" else "${formatNum(minutes)}$mStr"
 }

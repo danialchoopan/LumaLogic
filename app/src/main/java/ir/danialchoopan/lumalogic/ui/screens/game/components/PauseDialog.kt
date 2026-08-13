@@ -26,10 +26,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import ir.danialchoopan.lumalogic.R
+import ir.danialchoopan.lumalogic.ui.localization.currentLocalization
 import ir.danialchoopan.lumalogic.ui.theme.AmberPrimary
 
 @Composable
@@ -40,6 +43,8 @@ fun PauseDialog(
     onSettings: () -> Unit,
     onExitLevel: () -> Unit
 ) {
+    val loc = currentLocalization()
+
     Dialog(
         onDismissRequest = onResume
     ) {
@@ -62,7 +67,7 @@ fun PauseDialog(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(
-                    text = "GAME PAUSED",
+                    text = stringResource(R.string.pause_title),
                     style = MaterialTheme.typography.headlineSmall,
                     color = AmberPrimary,
                     fontWeight = FontWeight.Black,
@@ -86,7 +91,7 @@ fun PauseDialog(
                 ) {
                     Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(20.dp))
                     Spacer(modifier = Modifier.size(8.dp))
-                    Text("Resume Game", fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.pause_resume), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.surface)
                 }
 
                 OutlinedButton(
@@ -97,7 +102,7 @@ fun PauseDialog(
                 ) {
                     Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(20.dp))
                     Spacer(modifier = Modifier.size(8.dp))
-                    Text("Restart Level")
+                    Text(stringResource(R.string.pause_restart))
                 }
 
                 OutlinedButton(
@@ -108,7 +113,7 @@ fun PauseDialog(
                 ) {
                     Icon(Icons.Default.Settings, contentDescription = null, modifier = Modifier.size(20.dp))
                     Spacer(modifier = Modifier.size(8.dp))
-                    Text("Settings")
+                    Text(stringResource(R.string.title_settings))
                 }
 
                 OutlinedButton(
@@ -119,7 +124,7 @@ fun PauseDialog(
                 ) {
                     Icon(Icons.Default.ExitToApp, contentDescription = null, modifier = Modifier.size(20.dp))
                     Spacer(modifier = Modifier.size(8.dp))
-                    Text("Exit to Level Select")
+                    Text(stringResource(R.string.pause_exit))
                 }
             }
         }

@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bolt
@@ -42,7 +41,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ir.danialchoopan.lumalogic.domain.model.EnergyState
-import ir.danialchoopan.lumalogic.ui.theme.AmberPrimary
+import ir.danialchoopan.lumalogic.ui.localization.currentLocalization
 import ir.danialchoopan.lumalogic.ui.theme.TargetGreen
 
 @Composable
@@ -50,6 +49,8 @@ fun EnergyBar(
     energyState: EnergyState,
     modifier: Modifier = Modifier
 ) {
+    val loc = currentLocalization()
+
     val progress = if (energyState.maximum > 0) {
         (energyState.remaining.toFloat() / energyState.maximum.toFloat()).coerceIn(0f, 1f)
     } else 0f
@@ -94,7 +95,7 @@ fun EnergyBar(
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
-                    text = "ENERGY",
+                    text = if (loc.isPersian) "انرژی" else "ENERGY",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontWeight = FontWeight.Bold,
@@ -103,7 +104,7 @@ fun EnergyBar(
                 if (energyState.isLow) {
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = "LOW",
+                        text = if (loc.isPersian) "کم" else "LOW",
                         fontSize = 10.sp,
                         fontWeight = FontWeight.ExtraBold,
                         color = Color(0xFFFF9800),
@@ -112,7 +113,7 @@ fun EnergyBar(
                 } else if (energyState.isDepleted) {
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = "DEPLETED",
+                        text = if (loc.isPersian) "تمام شد" else "DEPLETED",
                         fontSize = 10.sp,
                         fontWeight = FontWeight.ExtraBold,
                         color = MaterialTheme.colorScheme.error
@@ -121,7 +122,7 @@ fun EnergyBar(
             }
 
             Text(
-                text = "${energyState.remaining} / ${energyState.maximum}",
+                text = "${loc.formatNumber(energyState.remaining)} / ${loc.formatNumber(energyState.maximum)}",
                 fontFamily = FontFamily.Monospace,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,

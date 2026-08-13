@@ -22,8 +22,6 @@ import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -31,8 +29,6 @@ import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.EmojiEvents
-import androidx.compose.material.icons.filled.GridOn
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
@@ -57,13 +53,17 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import ir.danialchoopan.lumalogic.R
 import ir.danialchoopan.lumalogic.di.AppContainer
 import ir.danialchoopan.lumalogic.ui.components.GlowingCard
 import ir.danialchoopan.lumalogic.ui.components.LumaButton
+import ir.danialchoopan.lumalogic.ui.localization.currentLocalization
+import ir.danialchoopan.lumalogic.ui.localization.toPersianDigits
 import ir.danialchoopan.lumalogic.ui.theme.AmberPrimary
 
 @Composable
@@ -81,6 +81,7 @@ fun HomeScreen(
     var isVisible by remember { mutableStateOf(false) }
     val progressManager = remember { AppContainer.levelProgressManager }
     val stats = remember { progressManager.getPlayerStats() }
+    val loc = currentLocalization()
 
     LaunchedEffect(Unit) {
         isVisible = true
@@ -113,6 +114,7 @@ fun HomeScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .systemBarsPadding()
+                .navigationBarsPadding()
                 .verticalScroll(rememberScrollState())
                 .padding(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -169,7 +171,7 @@ fun HomeScreen(
                     Spacer(modifier = Modifier.height(4.dp))
 
                     Text(
-                        text = "Precision Light Routing Engine",
+                        text = if (loc.isPersian) "موتور مسیریابی هوشمند نور" else "Precision Light Routing Engine",
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 13.sp
@@ -198,14 +200,14 @@ fun HomeScreen(
                         ) {
                             Column {
                                 Text(
-                                    text = "PROGRESSION",
+                                    text = stringResource(R.string.overall_progress),
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = AmberPrimary,
                                     letterSpacing = 1.sp
                                 )
                                 Text(
-                                    text = "${stats.totalLevelsCompleted} / 256 Levels",
+                                    text = "${loc.formatNumber(stats.totalLevelsCompleted)} / ${loc.formatNumber(256)} ${if (loc.isPersian) "مرحله" else "Levels"}",
                                     fontSize = 16.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurface
@@ -221,7 +223,7 @@ fun HomeScreen(
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
-                                    text = "${stats.totalStars} / 768",
+                                    text = "${loc.formatNumber(stats.totalStars)} / ${loc.formatNumber(768)}",
                                     fontSize = 15.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color(0xFFFFC107)
@@ -246,7 +248,7 @@ fun HomeScreen(
 
             // Primary Play Action Button
             LumaButton(
-                text = "CONTINUE PLAYING",
+                text = stringResource(R.string.play_campaign),
                 onClick = onChaptersClick,
                 icon = Icons.Default.PlayArrow,
                 modifier = Modifier.fillMaxWidth(),
@@ -267,16 +269,16 @@ fun HomeScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         HomeGridTile(
-                            title = "Chapters",
-                            subtitle = "16 Chapters",
+                            title = stringResource(R.string.title_chapters),
+                            subtitle = if (loc.isPersian) "۱۶ فصل معما" else "16 Chapters",
                             icon = Icons.Default.AutoAwesome,
                             onClick = onChaptersClick,
                             modifier = Modifier.weight(1f),
                             testTag = "tile_chapters"
                         )
                         HomeGridTile(
-                            title = "Daily Puzzle",
-                            subtitle = "Today's Light",
+                            title = stringResource(R.string.title_daily_puzzle),
+                            subtitle = if (loc.isPersian) "چالش امروز" else "Today's Light",
                             icon = Icons.Default.CalendarToday,
                             onClick = onDailyPuzzleClick,
                             modifier = Modifier.weight(1f),
@@ -289,16 +291,16 @@ fun HomeScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         HomeGridTile(
-                            title = "Achievements",
-                            subtitle = "Badges & Goals",
+                            title = stringResource(R.string.title_achievements),
+                            subtitle = if (loc.isPersian) "نشان‌ها و اهداف" else "Badges & Goals",
                             icon = Icons.Default.EmojiEvents,
                             onClick = onAchievementsClick,
                             modifier = Modifier.weight(1f),
                             testTag = "tile_achievements"
                         )
                         HomeGridTile(
-                            title = "Player Stats",
-                            subtitle = "Profile & Metrics",
+                            title = stringResource(R.string.title_profile),
+                            subtitle = if (loc.isPersian) "آمار و رکوردها" else "Profile & Metrics",
                             icon = Icons.Default.Person,
                             onClick = onProfileClick,
                             modifier = Modifier.weight(1f),
@@ -311,16 +313,16 @@ fun HomeScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         HomeGridTile(
-                            title = "Level Editor",
-                            subtitle = "My Custom Levels",
+                            title = stringResource(R.string.title_editor),
+                            subtitle = if (loc.isPersian) "مراحل ساخت شما" else "My Custom Levels",
                             icon = Icons.Default.Edit,
                             onClick = onLevelEditorClick,
                             modifier = Modifier.weight(1f),
                             testTag = "tile_level_editor"
                         )
                         HomeGridTile(
-                            title = "Settings",
-                            subtitle = "Audio & Themes",
+                            title = stringResource(R.string.title_settings),
+                            subtitle = if (loc.isPersian) "زبان، ظاهر و صدا" else "Audio & Themes",
                             icon = Icons.Default.Settings,
                             onClick = onSettingsClick,
                             modifier = Modifier.weight(1f),
@@ -337,12 +339,12 @@ fun HomeScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "v1.0.5 • Major Update",
+                    text = "v1.0.5".toPersianDigits(loc.isPersian),
                     fontSize = 11.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                 )
                 Text(
-                    text = "About & Credits",
+                    text = stringResource(R.string.title_about),
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                     color = AmberPrimary,

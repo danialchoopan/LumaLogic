@@ -27,11 +27,10 @@ import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Lightbulb
+import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -53,26 +52,28 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import ir.danialchoopan.lumalogic.R
 import ir.danialchoopan.lumalogic.domain.hint.Hint
 import ir.danialchoopan.lumalogic.ui.components.GameCanvas
 import ir.danialchoopan.lumalogic.ui.components.GlowingCard
 import ir.danialchoopan.lumalogic.ui.components.LumaHeader
+import ir.danialchoopan.lumalogic.ui.localization.currentLocalization
+import ir.danialchoopan.lumalogic.ui.localization.toPersianDigits
+import ir.danialchoopan.lumalogic.ui.screens.game.components.EnergyBar
+import ir.danialchoopan.lumalogic.ui.screens.game.components.LoseDialog
+import ir.danialchoopan.lumalogic.ui.screens.game.components.PauseDialog
+import ir.danialchoopan.lumalogic.ui.screens.game.components.WinDialog
 import ir.danialchoopan.lumalogic.ui.theme.AmberPrimary
 import ir.danialchoopan.lumalogic.ui.theme.MirrorBlue
 import ir.danialchoopan.lumalogic.ui.theme.SourceYellow
 import ir.danialchoopan.lumalogic.ui.theme.TargetGreen
 import ir.danialchoopan.lumalogic.ui.theme.WireGray
-
-import androidx.compose.material.icons.filled.Pause
-import ir.danialchoopan.lumalogic.ui.screens.game.components.EnergyBar
-import ir.danialchoopan.lumalogic.ui.screens.game.components.LoseDialog
-import ir.danialchoopan.lumalogic.ui.screens.game.components.PauseDialog
-import ir.danialchoopan.lumalogic.ui.screens.game.components.WinDialog
 
 @Composable
 fun GameScreen(
@@ -103,6 +104,7 @@ fun GameScreen(
     val completionResult by viewModel.completionResult.collectAsState()
 
     val snackbarHostState = remember { SnackbarHostState() }
+    val loc = currentLocalization()
 
     LaunchedEffect(userMessage) {
         userMessage?.let { msg ->
@@ -115,8 +117,8 @@ fun GameScreen(
         topBar = {
             LumaHeader(
                 title = when (val state = uiState) {
-                    is GameUiState.Success -> state.level.name
-                    else -> "Game Grid"
+                    is GameUiState.Success -> loc.getLevelName(state.level)
+                    else -> if (loc.isPersian) "صفحه بازی" else "Game Grid"
                 },
                 onBackClick = onBackClick,
                 actions = {
@@ -222,13 +224,13 @@ fun GameScreen(
                             ) {
                                 Column {
                                     Text(
-                                        text = state.level.name,
+                                        text = loc.getLevelName(state.level),
                                         style = MaterialTheme.typography.titleLarge,
                                         color = MaterialTheme.colorScheme.onSurface,
                                         fontWeight = FontWeight.Bold
                                     )
                                     Text(
-                                        text = if (gameStatus?.success == true) "LEVEL COMPLETE!" else (gameStatus?.stoppedReason?.name ?: state.level.difficulty.uppercase()),
+                                        text = if (gameStatus?.success == true) (if (loc.isPersian) "مرحله تکمیل شد!" else "LEVEL COMPLETE!") else (gameStatus?.stoppedReason?.name ?: loc.getDifficultyLabel(state.level.difficulty).uppercase()),
                                         style = MaterialTheme.typography.labelLarge,
                                         color = if (gameStatus?.success == true) TargetGreen else AmberPrimary,
                                         letterSpacing = 1.5.sp,
@@ -236,7 +238,7 @@ fun GameScreen(
                                     )
                                 }
                                 Text(
-                                    text = "TAP ROTATE | DRAG MOVE",
+                                    text = if (loc.isPersian) "لمس: چرخش | کشیدن: جابجایی" else "TAP ROTATE | DRAG MOVE",
                                     fontSize = 10.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     letterSpacing = 1.sp,
@@ -307,15 +309,15 @@ fun GameScreen(
                             horizontalArrangement = Arrangement.SpaceEvenly,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            HudStatItem(label = "MOVES", value = "$movesCount")
-                            HudStatItem(label = "TIME", value = String.format("%02d:%02d", timeSeconds / 60, timeSeconds % 60))
-                            HudStatItem(label = "GRID", value = "${state.level.rows}x${state.level.columns}")
+                            HudStatItem(label = if (loc.isPersian) "حرکات" else "MOVES", value = loc.formatNumber(movesCount))
+                            HudStatItem(label = if (loc.isPersian) "زمان" else "TIME", value = "${String.format("%02d", timeSeconds / 60).toPersianDigits(loc.isPersian)}:${String.format("%02d", timeSeconds % 60).toPersianDigits(loc.isPersian)}")
+                            HudStatItem(label = if (loc.isPersian) "شبکه" else "GRID", value = "${loc.formatNumber(state.level.rows)}x${loc.formatNumber(state.level.columns)}")
                         }
 
                         // Dialog Overlays
                         if (isPaused) {
                             PauseDialog(
-                                levelName = state.level.name,
+                                levelName = loc.getLevelName(state.level),
                                 onResume = { viewModel.resumeGame() },
                                 onRestart = { viewModel.resetGame() },
                                 onSettings = onSettingsClick,
@@ -338,7 +340,7 @@ fun GameScreen(
 
                         if (isLose) {
                             LoseDialog(
-                                levelName = state.level.name,
+                                levelName = loc.getLevelName(state.level),
                                 energyUsed = energyState.used,
                                 movesCount = movesCount,
                                 onRetry = { viewModel.resetGame() },
@@ -358,10 +360,10 @@ fun GameScreen(
                                 horizontalArrangement = Arrangement.SpaceEvenly,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                LegendItem(color = SourceYellow, label = "Source")
-                                LegendItem(color = TargetGreen, label = "Target")
-                                LegendItem(color = WireGray, label = "Wire")
-                                LegendItem(color = MirrorBlue, label = "Mirror")
+                                LegendItem(color = SourceYellow, label = if (loc.isPersian) "منبع" else "Source")
+                                LegendItem(color = TargetGreen, label = if (loc.isPersian) "هدف" else "Target")
+                                LegendItem(color = WireGray, label = if (loc.isPersian) "سیم" else "Wire")
+                                LegendItem(color = MirrorBlue, label = if (loc.isPersian) "آینه" else "Mirror")
                             }
                         }
                     }
@@ -376,6 +378,8 @@ private fun HintOverlayCard(
     hint: Hint,
     onDismiss: () -> Unit
 ) {
+    val loc = currentLocalization()
+
     Card(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
@@ -405,7 +409,7 @@ private fun HintOverlayCard(
                     )
                     Spacer(modifier = Modifier.size(6.dp))
                     Text(
-                        text = "HINT (${hint.type.name})",
+                        text = "${if (loc.isPersian) "راهنمایی" else "HINT"} (${hint.type.name})",
                         style = MaterialTheme.typography.titleSmall,
                         color = AmberPrimary,
                         fontWeight = FontWeight.Bold
@@ -431,7 +435,7 @@ private fun HintOverlayCard(
             )
             hint.suggestedAction?.let { action ->
                 Text(
-                    text = "Action: $action",
+                    text = "${if (loc.isPersian) "عمل پیشنهادی" else "Action"}: $action",
                     style = MaterialTheme.typography.labelSmall,
                     color = Color.Cyan,
                     fontWeight = FontWeight.SemiBold
@@ -471,6 +475,8 @@ private fun SleekBottomControlShell(
     onHintClick: () -> Unit,
     onResetClick: () -> Unit
 ) {
+    val loc = currentLocalization()
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -492,7 +498,7 @@ private fun SleekBottomControlShell(
             // Undo Button
             SleekCircularButton(
                 icon = Icons.AutoMirrored.Filled.Undo,
-                label = "UNDO",
+                label = if (loc.isPersian) "بازگشت" else "UNDO",
                 onClick = onUndoClick,
                 enabled = canUndo,
                 testTag = "undo_button"
@@ -501,7 +507,7 @@ private fun SleekBottomControlShell(
             // Redo Button
             SleekCircularButton(
                 icon = Icons.AutoMirrored.Filled.Redo,
-                label = "REDO",
+                label = if (loc.isPersian) "انجام مجدد" else "REDO",
                 onClick = onRedoClick,
                 enabled = canRedo,
                 testTag = "redo_button"
@@ -510,7 +516,7 @@ private fun SleekBottomControlShell(
             // Reset Button
             SleekCircularButton(
                 icon = Icons.Default.Refresh,
-                label = "RESET",
+                label = if (loc.isPersian) "بازنشانی" else "RESET",
                 onClick = onResetClick,
                 enabled = true,
                 testTag = "reset_button"
@@ -521,14 +527,14 @@ private fun SleekBottomControlShell(
                 badge = {
                     if (remainingHints > 0) {
                         Badge(containerColor = AmberPrimary, contentColor = Color.Black) {
-                            Text("$remainingHints", fontWeight = FontWeight.Bold)
+                            Text(loc.formatNumber(remainingHints), fontWeight = FontWeight.Bold)
                         }
                     }
                 }
             ) {
                 SleekCircularButton(
                     icon = Icons.Default.Lightbulb,
-                    label = "HINT",
+                    label = if (loc.isPersian) "راهنمایی" else "HINT",
                     onClick = onHintClick,
                     enabled = remainingHints > 0,
                     testTag = "hint_button"

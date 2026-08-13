@@ -1,7 +1,6 @@
 package ir.danialchoopan.lumalogic.ui.screens.chapterselect
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -44,11 +43,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import ir.danialchoopan.lumalogic.R
 import ir.danialchoopan.lumalogic.data.model.Chapter
 import ir.danialchoopan.lumalogic.di.AppContainer
+import ir.danialchoopan.lumalogic.ui.localization.currentLocalization
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -58,6 +60,7 @@ fun ChapterSelectScreen(
 ) {
     val chapterRepo = remember { AppContainer.chapterRepository }
     val progressManager = remember { AppContainer.levelProgressManager }
+    val loc = currentLocalization()
 
     val chapters = chapterRepo.getChapters()
     val allStats = remember { progressManager.getPlayerStats() }
@@ -68,12 +71,12 @@ fun ChapterSelectScreen(
                 title = {
                     Column {
                         Text(
-                            text = "Select Chapter",
+                            text = stringResource(R.string.title_chapters),
                             fontWeight = FontWeight.Bold,
                             fontSize = 20.sp
                         )
                         Text(
-                            text = "${allStats.totalLevelsCompleted}/256 Levels • ${allStats.totalStars}/768 Stars",
+                            text = "${loc.formatNumber(allStats.totalLevelsCompleted)}/${loc.formatNumber(256)} ${if (loc.isPersian) "مرحله" else "Levels"} • ${loc.formatNumber(allStats.totalStars)}/${loc.formatNumber(768)} ${if (loc.isPersian) "ستاره" else "Stars"}",
                             fontSize = 12.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -136,7 +139,7 @@ fun ChapterCard(
     starsEarned: Int,
     onClick: () -> Unit
 ) {
-    val cardAlpha = if (isUnlocked) 1f else 0.6f
+    val loc = currentLocalization()
 
     Card(
         modifier = Modifier
@@ -171,7 +174,7 @@ fun ChapterCard(
                     ) {
                         if (isUnlocked) {
                             Text(
-                                text = "${chapter.number}",
+                                text = loc.formatNumber(chapter.number),
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.primary,
                                 fontSize = 18.sp
@@ -190,14 +193,14 @@ fun ChapterCard(
 
                     Column {
                         Text(
-                            text = "CHAPTER ${chapter.number}",
+                            text = if (loc.isPersian) "فصل ${loc.formatNumber(chapter.number)}" else "CHAPTER ${chapter.number}",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary,
                             letterSpacing = 1.sp
                         )
                         Text(
-                            text = chapter.name,
+                            text = loc.getChapterName(chapter),
                             fontWeight = FontWeight.Bold,
                             fontSize = 18.sp,
                             color = MaterialTheme.colorScheme.onSurface
@@ -215,7 +218,7 @@ fun ChapterCard(
                     }
                 ) {
                     Text(
-                        text = chapter.difficulty,
+                        text = loc.getDifficultyLabel(chapter.difficulty),
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White,
@@ -227,7 +230,7 @@ fun ChapterCard(
             Spacer(modifier = Modifier.height(12.dp))
 
             Text(
-                text = chapter.description,
+                text = loc.getChapterDescription(chapter),
                 fontSize = 13.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 lineHeight = 18.sp
@@ -250,7 +253,7 @@ fun ChapterCard(
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = "$completedCount/16 Levels",
+                            text = "${loc.formatNumber(completedCount)}/${loc.formatNumber(16)} ${if (loc.isPersian) "مرحله" else "Levels"}",
                             fontSize = 12.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onSurface
@@ -266,7 +269,7 @@ fun ChapterCard(
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = "$starsEarned/48 Stars",
+                            text = "${loc.formatNumber(starsEarned)}/${loc.formatNumber(48)} ${if (loc.isPersian) "ستاره" else "Stars"}",
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFFFFC107)
@@ -304,7 +307,7 @@ fun ChapterCard(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Unlock with ${chapter.requiredStarsToUnlock} total stars",
+                        text = if (loc.isPersian) "باز کردن با ${loc.formatNumber(chapter.requiredStarsToUnlock)} ستاره" else "Unlock with ${chapter.requiredStarsToUnlock} total stars",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant

@@ -1,3 +1,143 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">LumaLogic</string>
+    <string name="app_version">1.0.5</string>
+    <string name="developer_name">Danial Choopan</string>
+    <string name="package_name">ir.danialchoopan.lumalogic</string>
+
+    <!-- Navigation & Titles -->
+    <string name="title_home">LumaLogic</string>
+    <string name="title_chapters">Chapters</string>
+    <string name="title_levels">Select Level</string>
+    <string name="title_game">Puzzle Matrix</string>
+    <string name="title_daily_puzzle">Daily Puzzle</string>
+    <string name="title_achievements">Achievements</string>
+    <string name="title_profile">Player Profile</string>
+    <string name="title_editor">Level Editor</string>
+    <string name="title_settings">Settings</string>
+    <string name="title_about">About LumaLogic</string>
+    <string name="title_tutorial">Tutorial &amp; Guide</string>
+    <string name="title_debug">Light Trace Debugger</string>
+
+    <!-- Home Screen -->
+    <string name="play_campaign">Play Campaign</string>
+    <string name="select_chapter">Select Chapter</string>
+    <string name="daily_challenge">Daily Challenge</string>
+    <string name="my_custom_levels">Level Editor &amp; Custom</string>
+    <string name="overall_progress">Overall Progress</string>
+    <string name="stars_collected">Stars Collected</string>
+    <string name="levels_completed">Levels Completed</string>
+
+    <!-- Settings Sections & Options -->
+    <string name="language_setting">Language / زبان</string>
+    <string name="language_english">English</string>
+    <string name="language_persian">فارسی (Persian)</string>
+
+    <string name="appearance_section">Appearance</string>
+    <string name="theme_mode">Theme Mode</string>
+    <string name="theme_system">System Default</string>
+    <string name="theme_light">Light Theme</string>
+    <string name="theme_dark">Dark Theme</string>
+    <string name="beam_glow">Beam Glow</string>
+    <string name="grid_visibility">Grid Lines</string>
+    <string name="grid_opacity">Grid Opacity</string>
+
+    <string name="accessibility_section">Accessibility</string>
+    <string name="high_contrast">High Contrast Mode</string>
+    <string name="reduce_motion">Reduce Motion</string>
+    <string name="text_size">Text Size</string>
+    <string name="text_size_small">Small</string>
+    <string name="text_size_normal">Normal</string>
+    <string name="text_size_large">Large</string>
+    <string name="text_size_xlarge">Extra Large</string>
+    <string name="colorblind_mode">Colorblind Mode (Symbols)</string>
+
+    <string name="audio_haptics_section">Audio &amp; Haptics</string>
+    <string name="sound_effects">Audio Effects</string>
+    <string name="sfx_volume">Sound Volume</string>
+    <string name="haptic_feedback">Haptic Feedback</string>
+    <string name="haptic_intensity">Vibration Intensity</string>
+    <string name="intensity_low">Low</string>
+    <string name="intensity_medium">Medium</string>
+    <string name="intensity_high">High</string>
+
+    <string name="gameplay_section">Gameplay &amp; Controls</string>
+    <string name="confirm_restart">Confirm Restart</string>
+    <string name="confirm_exit">Confirm Exit Level</string>
+    <string name="auto_advance">Auto-Advance Next Level</string>
+    <string name="show_hints">Enable Hint Engine</string>
+    <string name="show_tutorial">Show Tutorial Guide</string>
+
+    <string name="hud_section">HUD Display Customization</string>
+    <string name="show_move_counter">Move Counter</string>
+    <string name="show_energy_counter">Energy Gauge</string>
+    <string name="show_timer">Level Timer</string>
+    <string name="show_score">Score Counter</string>
+    <string name="show_star_reqs">Star Requirements</string>
+
+    <string name="data_section">Data &amp; Management</string>
+    <string name="export_custom_levels">Export Custom Levels</string>
+    <string name="import_custom_levels">Import Custom Levels</string>
+    <string name="reset_custom_levels">Reset Custom Levels</string>
+    <string name="reset_progress">Reset Level Progress</string>
+    <string name="reset_settings">Reset Settings to Default</string>
+
+    <!-- Dialogs & Confirmations -->
+    <string name="confirm_reset_progress_title">Reset Level Progress?</string>
+    <string name="confirm_reset_progress_msg">This will clear all completed levels, stars, high scores, and achievements. Progress cannot be recovered.</string>
+    <string name="confirm_reset_settings_title">Reset All Settings?</string>
+    <string name="confirm_reset_settings_msg">All language, appearance, and audio preferences will return to default settings.</string>
+    <string name="confirm_reset_custom_title">Delete Custom Levels?</string>
+    <string name="confirm_reset_custom_msg">All user-created levels in the editor will be permanently deleted.</string>
+    <string name="confirm_restart_title">Restart Level?</string>
+    <string name="confirm_restart_msg">Are you sure you want to reset the game grid to its initial state?</string>
+    <string name="confirm_exit_title">Exit to Level Select?</string>
+    <string name="confirm_exit_msg">Unsaved progress on the current puzzle will be lost.</string>
+    <string name="cancel">Cancel</string>
+    <string name="reset">Reset</string>
+    <string name="confirm">Confirm</string>
+
+    <!-- Game Dialog Strings -->
+    <string name="win_title">LEVEL COMPLETE!</string>
+    <string name="win_retry">Retry</string>
+    <string name="win_next_level">Next</string>
+    <string name="lose_title">OUT OF ENERGY</string>
+    <string name="lose_retry">Retry Level</string>
+    <string name="pause_title">GAME PAUSED</string>
+    <string name="pause_resume">Resume Game</string>
+    <string name="pause_restart">Restart Level</string>
+    <string name="pause_exit">Exit to Level Select</string>
+
+    <!-- Game HUD & Controls -->
+    <string name="undo">Undo</string>
+    <string name="redo">Redo</string>
+    <string name="hint">Hint</string>
+    <string name="moves">Moves</string>
+    <string name="energy">Energy</string>
+    <string name="time">Time</string>
+    <string name="score">Score</string>
+    <string name="target_lit">Targets Lit</string>
+    <string name="level_cleared">Level Cleared!</string>
+    <string name="level_failed">Energy Depleted!</string>
+    <string name="next_level">Next Level</string>
+    <string name="retry">Retry Level</string>
+    <string name="pause_game">Game Paused</string>
+    <string name="resume">Resume</string>
+
+    <!-- About & Credits -->
+    <string name="about_created_by">Created by Danial Choopan</string>
+    <string name="about_version">Version 1.0.5</string>
+    <string name="about_desc">LumaLogic is a optical logic puzzle game. Route light beams across grid matrices using mirrors, splitters, RGB filters, and logic gates.</string>
+
+    <!-- Tutorials -->
+    <string name="tutorial_intro_title">Welcome to LumaLogic</string>
+    <string name="tutorial_intro_desc">Route laser light from Sources to Target receptors to clear each grid puzzle.</string>
+    <string name="tutorial_mirror_title">Mirrors &amp; Splitters</string>
+    <string name="tutorial_mirror_desc">Tap elements to rotate them 90 degrees. Mirrors deflect light at right angles; Splitters duplicate beams.</string>
+    <string name="tutorial_filter_title">RGB Filters &amp; Colors</string>
+    <string name="tutorial_filter_desc">Filters pass matching light colors. Mix Primary Red, Green, and Blue to create Yellow, Magenta, Cyan, and White light.</string>
+    <string name="tutorial_gate_title">Optical Logic Gates</string>
+    <string name="tutorial_gate_desc">AND gates require multi-beam conjunctions. OR gates pass any beam. NOT gates invert active light signals.</string>
+    <string name="tutorial_energy_title">Energy Thrift &amp; Stars</string>
+    <string name="tutorial_energy_desc">Every rotation consumes energy. Complete puzzles in fewer moves to earn up to 3 Stars!</string>
 </resources>

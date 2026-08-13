@@ -6,12 +6,10 @@ import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -44,6 +42,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
@@ -52,7 +51,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import ir.danialchoopan.lumalogic.R
 import ir.danialchoopan.lumalogic.domain.model.GameCompletionResult
+import ir.danialchoopan.lumalogic.ui.localization.currentLocalization
 import ir.danialchoopan.lumalogic.ui.theme.AmberPrimary
 import ir.danialchoopan.lumalogic.ui.theme.TargetGreen
 import kotlinx.coroutines.delay
@@ -66,6 +67,7 @@ fun WinDialog(
     onHome: () -> Unit
 ) {
     var animatedStarsCount by remember { mutableIntStateOf(0) }
+    val loc = currentLocalization()
 
     LaunchedEffect(result.stars) {
         animatedStarsCount = 0
@@ -98,7 +100,7 @@ fun WinDialog(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(
-                    text = "LEVEL COMPLETE!",
+                    text = stringResource(R.string.win_title),
                     style = MaterialTheme.typography.headlineSmall,
                     color = TargetGreen,
                     fontWeight = FontWeight.Black,
@@ -159,14 +161,14 @@ fun WinDialog(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            text = "TOTAL SCORE",
+                            text = if (loc.isPersian) "امتیاز کل" else "TOTAL SCORE",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             color = TargetGreen,
                             letterSpacing = 1.5.sp
                         )
                         Text(
-                            text = "${result.scoreResult.totalScore}",
+                            text = loc.formatNumber(result.scoreResult.totalScore),
                             fontSize = 32.sp,
                             fontFamily = FontFamily.Monospace,
                             fontWeight = FontWeight.Black,
@@ -183,15 +185,15 @@ fun WinDialog(
                         .padding(12.dp),
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    ScoreStatRow("Completion Base", "+${result.scoreResult.baseCompletionScore}")
-                    ScoreStatRow("Energy Bonus (${result.energyState.remaining} remaining)", "+${result.scoreResult.energyBonus}")
-                    ScoreStatRow("Move Efficiency (${result.movesCount} moves)", "+${result.scoreResult.moveBonus}")
-                    ScoreStatRow("Time Bonus (${result.timeSeconds}s)", "+${result.scoreResult.timeBonus}")
+                    ScoreStatRow(if (loc.isPersian) "امتیاز پایه تکمیلی" else "Completion Base", "+${loc.formatNumber(result.scoreResult.baseCompletionScore)}")
+                    ScoreStatRow(if (loc.isPersian) "پاداش انرژی باقیمانده (${loc.formatNumber(result.energyState.remaining)})" else "Energy Bonus (${result.energyState.remaining} remaining)", "+${loc.formatNumber(result.scoreResult.energyBonus)}")
+                    ScoreStatRow(if (loc.isPersian) "بهینگی حرکت (${loc.formatNumber(result.movesCount)} حرکت)" else "Move Efficiency (${result.movesCount} moves)", "+${loc.formatNumber(result.scoreResult.moveBonus)}")
+                    ScoreStatRow(if (loc.isPersian) "پاداش زمان (${loc.formatNumber(result.timeSeconds)} ثانیه)" else "Time Bonus (${result.timeSeconds}s)", "+${loc.formatNumber(result.scoreResult.timeBonus)}")
                     if (result.optionalTargetsActivated > 0) {
-                        ScoreStatRow("Optional Targets (${result.optionalTargetsActivated})", "+${result.scoreResult.optionalTargetBonus}")
+                        ScoreStatRow(if (loc.isPersian) "اهداف اختیاری (${loc.formatNumber(result.optionalTargetsActivated)})" else "Optional Targets (${result.optionalTargetsActivated})", "+${loc.formatNumber(result.scoreResult.optionalTargetBonus)}")
                     }
                     if (result.scoreResult.hintPenalty > 0) {
-                        ScoreStatRow("Hints Used Penalty (${result.hintsUsed})", "-${result.scoreResult.hintPenalty}", isNegative = true)
+                        ScoreStatRow(if (loc.isPersian) "جریمه راهنمایی (${loc.formatNumber(result.hintsUsed)})" else "Hints Used Penalty (${result.hintsUsed})", "-${loc.formatNumber(result.scoreResult.hintPenalty)}", isNegative = true)
                     }
                 }
 
@@ -220,14 +222,14 @@ fun WinDialog(
                     ) {
                         Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("Retry")
+                        Text(stringResource(R.string.win_retry))
                     }
                     Button(
                         onClick = onNextLevel,
                         colors = ButtonDefaults.buttonColors(containerColor = TargetGreen, contentColor = Color.Black),
                         modifier = Modifier.testTag("win_next_level_button")
                     ) {
-                        Text("Next", fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.win_next_level), fontWeight = FontWeight.Bold)
                         Spacer(modifier = Modifier.width(4.dp))
                         Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, modifier = Modifier.size(16.dp))
                     }
