@@ -287,6 +287,7 @@ fun GameScreen(
                                     beamSegments = beamSegments,
                                     activatedTargets = gameStatus?.activatedTargets ?: emptySet(),
                                     selectedPosition = selectedCell,
+                                    hintPosition = activeHint?.position,
                                     onCellClick = { pos ->
                                         viewModel.selectCell(pos)
                                     },
@@ -330,7 +331,7 @@ fun GameScreen(
                                 result = completionResult!!,
                                 onRetry = { viewModel.resetGame() },
                                 onNextLevel = {
-                                    val nextId = "level_${state.level.levelId.removePrefix("level_").toIntOrNull()?.plus(1) ?: 1}"
+                                    val nextId = ir.danialchoopan.lumalogic.data.level.LevelRegistry.getNextLevelId(state.level.levelId) ?: state.level.levelId
                                     onNextLevelClick(nextId)
                                 },
                                 onLevelSelect = onBackClick,
@@ -429,13 +430,13 @@ private fun HintOverlayCard(
                 }
             }
             Text(
-                text = hint.message,
+                text = loc.formatHint(hint),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface
             )
-            hint.suggestedAction?.let { action ->
+            loc.formatHintAction(hint)?.let { action ->
                 Text(
-                    text = "${if (loc.isPersian) "عمل پیشنهادی" else "Action"}: $action",
+                    text = "${if (loc.isPersian) "اقدام پیشنهادی" else "Action"}: $action",
                     style = MaterialTheme.typography.labelSmall,
                     color = Color.Cyan,
                     fontWeight = FontWeight.SemiBold

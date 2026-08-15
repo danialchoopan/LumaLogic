@@ -43,6 +43,7 @@ fun GameCanvas(
     beamSegments: List<BeamSegment> = emptyList(),
     activatedTargets: Set<Position>,
     selectedPosition: Position? = null,
+    hintPosition: Position? = null,
     onCellClick: (Position) -> Unit,
     onMoveCell: (Position, Position) -> Unit = { _, _ -> },
     onInvalidMoveAttempt: (String) -> Unit = {},
@@ -231,6 +232,7 @@ fun GameCanvas(
                 drawScope = this,
                 selectedPosition = selectedPosition,
                 dragHoverPosition = dragHoverPosition,
+                hintPosition = hintPosition,
                 gridOrigin = gridOrigin,
                 cellSize = cellSize,
                 pulseScale = 1f + pulseProgress * 0.1f

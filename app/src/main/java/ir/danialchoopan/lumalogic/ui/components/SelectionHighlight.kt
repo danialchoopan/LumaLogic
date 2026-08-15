@@ -17,11 +17,42 @@ object SelectionHighlight {
         drawScope: DrawScope,
         selectedPosition: Position?,
         dragHoverPosition: Position?,
+        hintPosition: Position? = null,
         gridOrigin: Offset,
         cellSize: Float,
         pulseScale: Float = 1f
     ) {
         with(drawScope) {
+            // Draw Hint Beacon Highlight (Glowing Cyan / Amber indicator ring)
+            hintPosition?.let { pos ->
+                val topLeft = Offset(
+                    x = gridOrigin.x + pos.column * cellSize,
+                    y = gridOrigin.y + pos.row * cellSize
+                )
+                val padding = cellSize * 0.03f
+                val size = cellSize - (padding * 2f)
+
+                // Wide soft hint aura
+                drawRoundRect(
+                    color = androidx.compose.ui.graphics.Color(0xFF00E5FF).copy(alpha = 0.35f * pulseScale),
+                    topLeft = Offset(topLeft.x + padding, topLeft.y + padding),
+                    size = Size(size, size),
+                    cornerRadius = CornerRadius(cellSize * 0.2f, cellSize * 0.2f)
+                )
+
+                // High-visibility animated border
+                drawRoundRect(
+                    color = androidx.compose.ui.graphics.Color(0xFF00E5FF),
+                    topLeft = Offset(topLeft.x + padding, topLeft.y + padding),
+                    size = Size(size, size),
+                    cornerRadius = CornerRadius(cellSize * 0.2f, cellSize * 0.2f),
+                    style = Stroke(
+                        width = 4.5f * pulseScale,
+                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(12f, 8f), 0f)
+                    )
+                )
+            }
+
             // Draw Selected Cell Highlight (Glowing outline)
             selectedPosition?.let { pos ->
                 val topLeft = Offset(
