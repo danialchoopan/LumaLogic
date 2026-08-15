@@ -106,6 +106,9 @@ class GameViewModel(
     private val _isWin = MutableStateFlow(false)
     val isWin: StateFlow<Boolean> = _isWin.asStateFlow()
 
+    private val _isCelebrating = MutableStateFlow(false)
+    val isCelebrating: StateFlow<Boolean> = _isCelebrating.asStateFlow()
+
     private val _isLose = MutableStateFlow(false)
     val isLose: StateFlow<Boolean> = _isLose.asStateFlow()
 
@@ -148,6 +151,7 @@ class GameViewModel(
             _timeSeconds.value = 0L
             _isPaused.value = false
             _isWin.value = false
+            _isCelebrating.value = false
             _isLose.value = false
             _completionResult.value = null
             updateUndoRedoStates()
@@ -197,8 +201,10 @@ class GameViewModel(
         }
 
         // Check Win state
-        if (traceResult.success && !_isWin.value) {
-            _isWin.value = true
+        if (traceResult.success && !_isWin.value && !_isCelebrating.value) {
+            _isCelebrating.value = true
+            timerJob?.cancel() // Stop timer immediately on victory
+
             val hintsUsed = 3 - _remainingHints.value
             val optActivated = traceResult.activatedTargets.size - (currentLevel.cells.count { it.type == ir.danialchoopan.lumalogic.data.model.CellType.TARGET && !it.isOptionalTarget })
             val scoreResult = ScoreCalculator.calculateScore(
@@ -225,7 +231,7 @@ class GameViewModel(
             val updatedStats = AppContainer.levelProgressManager.getPlayerStats()
             AppContainer.achievementRepository.checkAndUnlockAchievements(updatedStats, updatedProgress)
 
-            _completionResult.value = GameCompletionResult(
+            val completion = GameCompletionResult(
                 levelId = currentLevel.levelId,
                 levelName = currentLevel.name,
                 isWin = true,
@@ -237,12 +243,20 @@ class GameViewModel(
                 hintsUsed = hintsUsed,
                 optionalTargetsActivated = optActivated.coerceAtLeast(0)
             )
+            _completionResult.value = completion
 
             AppContainer.audioManager.playLevelComplete()
             AppContainer.hapticManager.performLevelComplete()
+
+            // Wait 2 seconds with fanfare and particle celebration before presenting completion dialog
+            viewModelScope.launch {
+                kotlinx.coroutines.delay(2000L)
+                _isCelebrating.value = false
+                _isWin.value = true
+            }
         }
         // Check Lose state (Energy depleted without achieving targets)
-        else if (!traceResult.success && (effectiveEnergyState.isDepleted || traceResult.stoppedReason == StopReason.OUT_OF_ENERGY) && !_isLose.value && !_isWin.value) {
+        else if (!traceResult.success && (effectiveEnergyState.isDepleted || traceResult.stoppedReason == StopReason.OUT_OF_ENERGY) && !_isLose.value && !_isWin.value && !_isCelebrating.value) {
             _isLose.value = true
             AppContainer.audioManager.playLevelFailed()
             AppContainer.hapticManager.performLevelFailed()
@@ -471,6 +485,7 @@ class GameViewModel(
             _timeSeconds.value = 0L
             _isPaused.value = false
             _isWin.value = false
+            _isCelebrating.value = false
             _isLose.value = false
             _completionResult.value = null
             updateUndoRedoStates()

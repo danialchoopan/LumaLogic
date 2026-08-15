@@ -65,6 +65,7 @@ import ir.danialchoopan.lumalogic.ui.components.GlowingCard
 import ir.danialchoopan.lumalogic.ui.components.LumaHeader
 import ir.danialchoopan.lumalogic.ui.localization.currentLocalization
 import ir.danialchoopan.lumalogic.ui.localization.toPersianDigits
+import ir.danialchoopan.lumalogic.ui.screens.game.components.CelebrationOverlay
 import ir.danialchoopan.lumalogic.ui.screens.game.components.EnergyBar
 import ir.danialchoopan.lumalogic.ui.screens.game.components.LoseDialog
 import ir.danialchoopan.lumalogic.ui.screens.game.components.PauseDialog
@@ -100,6 +101,7 @@ fun GameScreen(
     val timeSeconds by viewModel.timeSeconds.collectAsState()
     val isPaused by viewModel.isPaused.collectAsState()
     val isWin by viewModel.isWin.collectAsState()
+    val isCelebrating by viewModel.isCelebrating.collectAsState()
     val isLose by viewModel.isLose.collectAsState()
     val completionResult by viewModel.completionResult.collectAsState()
 
@@ -238,7 +240,7 @@ fun GameScreen(
                                     )
                                 }
                                 Text(
-                                    text = stringResource(R.string.control_hint),
+                                    text = if (loc.isPersian) "لمس: چرخش | کشیدن طولانی: جابجایی" else stringResource(R.string.control_hint),
                                     fontSize = 10.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     letterSpacing = 1.sp,
@@ -326,6 +328,11 @@ fun GameScreen(
                             )
                         }
 
+                        // Celebration Visual Overlay (shows during the 2s victory fanfare before WinDialog)
+                        if (isCelebrating) {
+                            CelebrationOverlay()
+                        }
+
                         if (isWin && completionResult != null) {
                             WinDialog(
                                 result = completionResult!!,
@@ -363,7 +370,7 @@ fun GameScreen(
                             ) {
                                 LegendItem(color = SourceYellow, label = if (loc.isPersian) "منبع" else "Source")
                                 LegendItem(color = TargetGreen, label = if (loc.isPersian) "هدف" else "Target")
-                                LegendItem(color = WireGray, label = if (loc.isPersian) "سیم" else "Wire")
+                                LegendItem(color = Color(0xFF00E5FF), label = if (loc.isPersian) "قابل جابجایی" else "Movable")
                                 LegendItem(color = MirrorBlue, label = if (loc.isPersian) "آینه" else "Mirror")
                             }
                         }

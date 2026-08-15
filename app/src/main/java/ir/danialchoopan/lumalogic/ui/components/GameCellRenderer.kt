@@ -21,6 +21,14 @@ import ir.danialchoopan.lumalogic.ui.components.GameColors.toComposeColor
  */
 object GameCellRenderer {
 
+    private fun isCellMovable(cell: Cell): Boolean {
+        if (cell.isLocked) return false
+        return when (cell.type) {
+            CellType.MIRROR, CellType.WIRE, CellType.SPLITTER, CellType.FILTER -> true
+            else -> false
+        }
+    }
+
     fun drawCell(
         drawScope: DrawScope,
         cell: Cell,
@@ -33,6 +41,7 @@ object GameCellRenderer {
         val padding = cellSize * 0.05f
         val tileSize = cellSize - (padding * 2f)
         val cornerRadius = CornerRadius(cellSize * 0.15f, cellSize * 0.15f)
+        val movable = isCellMovable(cell)
 
         with(drawScope) {
             // Draw background tile container
@@ -49,14 +58,22 @@ object GameCellRenderer {
                 cornerRadius = cornerRadius
             )
 
-            // Cell border
+            // Cell border: highlight movable components with distinct accent border
             val borderTint = cell.lightColor.toComposeColor()
+            val borderColor = when {
+                cell.isLit -> borderTint.copy(alpha = 0.6f)
+                movable -> Color(0xFF00E5FF).copy(alpha = 0.45f) // Cyan accent for movable
+                cell.isLocked && cell.type != CellType.EMPTY && cell.type != CellType.BLOCK -> Color(0xFFFF5252).copy(alpha = 0.35f)
+                else -> GameColors.GridBorder
+            }
+            val borderWidth = if (cell.isLit || movable) 2.5f else 1.5f
+
             drawRoundRect(
-                color = if (cell.isLit) borderTint.copy(alpha = 0.5f) else GameColors.GridBorder,
+                color = borderColor,
                 topLeft = Offset(topLeft.x + padding, topLeft.y + padding),
                 size = Size(tileSize, tileSize),
                 cornerRadius = cornerRadius,
-                style = Stroke(width = if (cell.isLit) 3f else 1.5f)
+                style = Stroke(width = borderWidth)
             )
 
             // Draw specific component contents with rotation transform
@@ -75,6 +92,97 @@ object GameCellRenderer {
                     CellType.GATE -> drawGateTile(this, center, cellSize, cell.isLit, cell.gateType, cell.lightColor)
                 }
             }
+
+            // Draw movable or locked indicator in corner
+            if (movable) {
+                drawMovableIndicator(this, topLeft, padding, tileSize, cellSize)
+            } else if (cell.isLocked && cell.type != CellType.EMPTY && cell.type != CellType.BLOCK && cell.type != CellType.SOURCE && cell.type != CellType.TARGET) {
+                drawLockedIndicator(this, topLeft, padding, tileSize, cellSize)
+            }
+        }
+    }
+
+    private fun drawMovableIndicator(
+        drawScope: DrawScope,
+        topLeft: Offset,
+        padding: Float,
+        tileSize: Float,
+        cellSize: Float
+    ) {
+        val badgeRadius = cellSize * 0.08f
+        val badgeCenter = Offset(topLeft.x + padding + tileSize - badgeRadius - 2f, topLeft.y + padding + badgeRadius + 2f)
+
+        with(drawScope) {
+            // Cyan badge glow and background
+            drawCircle(
+                color = Color(0xFF00E5FF).copy(alpha = 0.25f),
+                radius = badgeRadius * 1.3f,
+                center = badgeCenter
+            )
+            drawCircle(
+                color = Color(0xFF00838F),
+                radius = badgeRadius,
+                center = badgeCenter
+            )
+            drawCircle(
+                color = Color(0xFF00E5FF),
+                radius = badgeRadius,
+                center = badgeCenter,
+                style = Stroke(width = 1.5f)
+            )
+            // 4-way move cross / diamond dot
+            val markSize = badgeRadius * 0.45f
+            drawLine(
+                color = Color.White,
+                start = Offset(badgeCenter.x - markSize, badgeCenter.y),
+                end = Offset(badgeCenter.x + markSize, badgeCenter.y),
+                strokeWidth = 2f,
+                cap = StrokeCap.Round
+            )
+            drawLine(
+                color = Color.White,
+                start = Offset(badgeCenter.x, badgeCenter.y - markSize),
+                end = Offset(badgeCenter.x, badgeCenter.y + markSize),
+                strokeWidth = 2f,
+                cap = StrokeCap.Round
+            )
+        }
+    }
+
+    private fun drawLockedIndicator(
+        drawScope: DrawScope,
+        topLeft: Offset,
+        padding: Float,
+        tileSize: Float,
+        cellSize: Float
+    ) {
+        val badgeRadius = cellSize * 0.08f
+        val badgeCenter = Offset(topLeft.x + padding + tileSize - badgeRadius - 2f, topLeft.y + padding + badgeRadius + 2f)
+
+        with(drawScope) {
+            // Red padlock badge
+            drawCircle(
+                color = Color(0xFFFF5252).copy(alpha = 0.2f),
+                radius = badgeRadius * 1.2f,
+                center = badgeCenter
+            )
+            drawCircle(
+                color = Color(0xFF4A1010),
+                radius = badgeRadius,
+                center = badgeCenter
+            )
+            drawCircle(
+                color = Color(0xFFFF5252),
+                radius = badgeRadius,
+                center = badgeCenter,
+                style = Stroke(width = 1.5f)
+            )
+            // Padlock dot/shackle
+            drawCircle(
+                color = Color(0xFFFF8A80),
+                radius = badgeRadius * 0.35f,
+                center = badgeCenter
+            )
         }
     }
 
