@@ -9,18 +9,24 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.Accessibility
 import androidx.compose.material.icons.filled.Animation
 import androidx.compose.material.icons.filled.BugReport
+import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Contrast
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.DeveloperMode
 import androidx.compose.material.icons.filled.GridOn
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.RestartAlt
@@ -44,6 +50,7 @@ import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -52,9 +59,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ir.danialchoopan.lumalogic.R
@@ -67,10 +78,13 @@ import ir.danialchoopan.lumalogic.ui.theme.AmberPrimary
 @Composable
 fun SettingsScreen(
     onBackClick: () -> Unit,
-    onOpenDebugClick: () -> Unit = {}
+    onOpenDebugClick: () -> Unit = {},
+    onAboutClick: () -> Unit = {}
 ) {
     val settingsState by AppContainer.settingsRepository.settings.collectAsState()
     val loc = currentLocalization()
+    val uriHandler = LocalUriHandler.current
+    val githubUrl = "https://github.com/danialchoopan"
 
     var showResetProgressDialog by remember { mutableStateOf(false) }
     var showResetSettingsDialog by remember { mutableStateOf(false) }
@@ -298,6 +312,86 @@ fun SettingsScreen(
                         fontWeight = FontWeight.Bold,
                         fontSize = 12.sp
                     )
+                }
+            }
+
+            // About & Developer Section
+            SectionTitle(if (loc.isPersian) "درباره برنامه و سازنده" else "About & Developer")
+
+            GlowingCard(
+                modifier = Modifier.fillMaxWidth(),
+                borderColor = AmberPrimary.copy(alpha = 0.5f)
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.DeveloperMode,
+                                contentDescription = null,
+                                tint = AmberPrimary,
+                                modifier = Modifier.padding(end = 8.dp)
+                            )
+                            Text(
+                                text = if (loc.isPersian) "طراحی شده توسط دانیال چوپان" else "Designed by Danial Choopan",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
+
+                    Text(
+                        text = if (loc.isPersian) "بازی فکری و پازل اپتیک و منطق نوری لوما‌لاجیک" else "LumaLogic - Optical & Logic Puzzle Game",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    // GitHub Profile Link Button
+                    Button(
+                        onClick = {
+                            try {
+                                uriHandler.openUri(githubUrl)
+                            } catch (_: Exception) {}
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = AmberPrimary),
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("settings_github_button")
+                    ) {
+                        Icon(Icons.Default.Code, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = if (loc.isPersian) "مشاهده گیت‌هاب دانیال چوپان (danialchoopan)" else "Visit GitHub (danialchoopan)",
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(16.dp))
+                    }
+
+                    // Open full about page button
+                    OutlinedButton(
+                        onClick = onAboutClick,
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("settings_about_button")
+                    ) {
+                        Icon(Icons.Default.Info, contentDescription = null, tint = AmberPrimary)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = if (loc.isPersian) "صفحه کامل درباره برنامه" else "View Full About Page",
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
                 }
             }
 

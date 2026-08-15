@@ -278,7 +278,8 @@ fun LumaNavGraph(
         composable(LumaDestinations.SETTINGS) {
             SettingsScreen(
                 onBackClick = { navController.popBackStack() },
-                onOpenDebugClick = { navController.navigate(LumaDestinations.DEBUG) }
+                onOpenDebugClick = { navController.navigate(LumaDestinations.DEBUG) },
+                onAboutClick = { navController.navigate(LumaDestinations.ABOUT) }
             )
         }
 
