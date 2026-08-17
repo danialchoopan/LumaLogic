@@ -364,7 +364,7 @@ private fun PropertyInspectorCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "${if (loc.isPersian) "ویژگی قطعه" else "PROPERTIES"} (${cell.type.name} ${loc.formatNumber(cell.row)},${loc.formatNumber(cell.column)})",
+                    text = "${if (loc.isPersian) "ویژگی قطعه" else "PROPERTIES"} (${loc.getCellTypeName(cell.type)} ${loc.formatNumber(cell.row)},${loc.formatNumber(cell.column)})",
                     style = MaterialTheme.typography.titleSmall,
                     color = AmberPrimary,
                     fontWeight = FontWeight.Bold
@@ -499,10 +499,10 @@ private fun ValidationResultCard(
             }
 
             result.errors.forEach { err ->
-                Text("• $err", fontSize = 12.sp, color = Color.Red, fontWeight = FontWeight.SemiBold)
+                Text("• ${loc.getValidationMessage(err)}", fontSize = 12.sp, color = Color.Red, fontWeight = FontWeight.SemiBold)
             }
             result.warnings.forEach { warn ->
-                Text("• $warn", fontSize = 12.sp, color = AmberPrimary)
+                Text("• ${loc.getValidationMessage(warn)}", fontSize = 12.sp, color = AmberPrimary)
             }
         }
     }

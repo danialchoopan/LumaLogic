@@ -258,6 +258,72 @@ class LocalizationManager(val isPersian: Boolean) {
         return "فصل $chapterNum: $persianTitle"
     }
 
+    fun getCellTypeName(cellType: CellType): String {
+        if (!isPersian) return cellType.name
+        return when (cellType) {
+            CellType.EMPTY -> "خالی"
+            CellType.SOURCE -> "منبع نور"
+            CellType.TARGET -> "هدف دریافت نور"
+            CellType.MIRROR -> "آینه بازتابی"
+            CellType.SPLITTER -> "منشور شکافنده"
+            CellType.FILTER -> "فیلتر رنگی"
+            CellType.BLOCK -> "مانع نوری"
+            CellType.WIRE -> "سیم رسانا"
+            CellType.GATE -> "دروازه منطقی"
+        }
+    }
+
+    fun getLightColorName(color: LightColor): String {
+        if (!isPersian) return color.name
+        return when (color) {
+            LightColor.WHITE -> "سفید"
+            LightColor.RED -> "قرمز"
+            LightColor.BLUE -> "آبی"
+            LightColor.GREEN -> "سبز"
+            LightColor.YELLOW -> "زرد"
+        }
+    }
+
+    fun getGateTypeName(gateType: GateType): String {
+        if (!isPersian) return gateType.name
+        return when (gateType) {
+            GateType.AND -> "AND (هم‌زمانی)"
+            GateType.OR -> "OR (یا)"
+            GateType.NOT -> "NOT (وارون‌ساز)"
+        }
+    }
+
+    fun getValidationMessage(msg: String): String {
+        if (!isPersian) return msg
+        return when {
+            msg.contains("Grid dimensions must be at least", ignoreCase = true) ->
+                "ابعاد شبکه باید حداقل ۲×۲ باشد."
+            msg.contains("Grid dimensions exceed maximum", ignoreCase = true) ->
+                "ابعاد شبکه از حداکثر مجاز (۵۰×۵۰) فراتر رفته است."
+            msg.contains("No Source exists", ignoreCase = true) ->
+                "هیچ منبع نوری وجود ندارد. حداقل یک منبع نور لازم است."
+            msg.contains("No Target exists", ignoreCase = true) ->
+                "هیچ هدفی وجود ندارد. حداقل یک هدف دریافت نور لازم است."
+            msg.contains("At least one required Target is needed", ignoreCase = true) ->
+                "حداقل یک هدف اجباری برای اتمام مرحله لازم است."
+            msg.contains("Duplicate component positions", ignoreCase = true) ->
+                "چندین قطعه در یک مختصات مشترک قرار گرفته‌اند."
+            msg.contains("is out of grid bounds", ignoreCase = true) ->
+                "قطعه خارج از محدوده شبکه قرار دارد."
+            msg.contains("has no accepted color configured", ignoreCase = true) ->
+                "رنگ عبوری برای فیلتر مشخص نشده است."
+            msg.contains("has no gate type specified", ignoreCase = true) ->
+                "نوع دروازه منطقی مشخص نشده است."
+            msg.contains("has no explicit color, defaulting to WHITE", ignoreCase = true) ->
+                "رنگ منبع نور مشخص نشده، رنگ پیش‌فرض سفید اعمال شد."
+            msg.contains("has no optical components", ignoreCase = true) ->
+                "این مرحله هیچ قطعه اپتیکی ندارد و ممکن است غیرقابل حل باشد."
+            msg.contains("Level name is empty", ignoreCase = true) ->
+                "نام مرحله خالی است. انتخاب یک نام مناسب پیشنهاد می‌شود."
+            else -> msg
+        }
+    }
+
     fun getAchievementTitle(achievement: Achievement): String {
         if (!isPersian) return achievement.title
         return when (achievement.id) {
