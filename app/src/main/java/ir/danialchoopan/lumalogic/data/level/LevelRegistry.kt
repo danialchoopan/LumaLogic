@@ -163,7 +163,7 @@ object LevelRegistry {
             for (lvlIndex in 0 until 16) {
                 globalIndex++
                 val levelNumInChapter = lvlIndex + 1
-                val id = String.format("chapter_%02d_level_%02d", chapterNum, levelNumInChapter)
+                val id = String.format(java.util.Locale.US, "chapter_%02d_level_%02d", chapterNum, levelNumInChapter)
                 val name = levelNames[globalIndex - 1]
                 val level = createCraftedLevel(
                     globalLevelIndex = globalIndex,

@@ -79,16 +79,19 @@ class LevelProgressManager(
     }
 
     fun isLevelUnlocked(levelId: String): Boolean {
+        if (levelId.startsWith("user_")) return true // custom/user-created levels are always playable
+
         val allLevels = LevelRegistry.getAllLevels()
-        val level = allLevels.find { it.levelId == levelId } ?: return true // custom levels unlocked by default
+        val level = allLevels.find { it.levelId == levelId } ?: return false
 
         // Find which chapter this level belongs to
-        val chapterId = level.tags.firstOrNull { it.startsWith("chapter_") } ?: return true
+        val chapterId = level.tags.firstOrNull { it.startsWith("chapter_") } ?: return false
         if (!isChapterUnlocked(chapterId)) return false
 
         val chapterLevels = LevelRegistry.getLevelsForChapter(chapterId)
         val levelIndexInChapter = chapterLevels.indexOfFirst { it.levelId == levelId }
-        if (levelIndexInChapter <= 0) return true // First level of an unlocked chapter is always unlocked
+        if (levelIndexInChapter == 0) return true // First level of an unlocked chapter is always unlocked
+        if (levelIndexInChapter < 0) return false
 
         // Otherwise, previous level in the chapter must be completed
         val previousLevel = chapterLevels[levelIndexInChapter - 1]
