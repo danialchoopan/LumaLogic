@@ -69,6 +69,7 @@ import ir.danialchoopan.lumalogic.ui.theme.AmberPrimary
 @Composable
 fun HomeScreen(
     onPlayClick: () -> Unit,
+    onPlayLevel: (String) -> Unit = {},
     onChaptersClick: () -> Unit = {},
     onLevelSelectClick: () -> Unit = {},
     onDailyPuzzleClick: () -> Unit = {},
@@ -82,6 +83,13 @@ fun HomeScreen(
     val progressManager = remember { AppContainer.levelProgressManager }
     val stats = remember { progressManager.getPlayerStats() }
     val loc = currentLocalization()
+    val hasStarted = remember { progressManager.hasStartedGame() }
+    val nextPlayableLevel = remember { progressManager.getNextPlayableLevel() }
+    val totalLevels = 256
+    val currentLevelNumber = remember(nextPlayableLevel) {
+        val idx = ir.danialchoopan.lumalogic.data.level.LevelRegistry.getAllLevels().indexOfFirst { it.levelId == nextPlayableLevel.levelId }
+        if (idx >= 0) idx + 1 else 1
+    }
 
     LaunchedEffect(Unit) {
         isVisible = true
@@ -171,13 +179,84 @@ fun HomeScreen(
                     Spacer(modifier = Modifier.height(4.dp))
 
                     Text(
-                        text = if (loc.isPersian) "موتور مسیریابی هوشمند نور" else "Precision Light Routing Engine",
+                        text = if (loc.isPersian) "موتور معمایی نور و اپتیک منطقی" else "Precision Light Routing Engine",
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 13.sp
                     )
                 }
             }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Primary Play / Continue Game Card
+            AnimatedVisibility(
+                visible = isVisible,
+                enter = fadeIn(animationSpec = tween(700)) + slideInVertically(initialOffsetY = { 30 })
+            ) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(20.dp))
+                        .clickable {
+                            onPlayLevel(nextPlayableLevel.levelId)
+                        }
+                        .testTag("main_play_button"),
+                    colors = CardDefaults.cardColors(
+                        containerColor = AmberPrimary
+                    ),
+                    shape = RoundedCornerShape(20.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp, vertical = 18.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = if (hasStarted) {
+                                    if (loc.isPersian) "ادامه بازی" else "CONTINUE GAME"
+                                } else {
+                                    if (loc.isPersian) "شروع بازی" else "START GAME"
+                                },
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Black,
+                                color = Color.Black,
+                                letterSpacing = 1.sp
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = if (hasStarted) {
+                                    "${if (loc.isPersian) "مرحله" else "Level"} ${loc.formatNumber(currentLevelNumber)} • ${loc.getLevelName(nextPlayableLevel)}"
+                                } else {
+                                    if (loc.isPersian) "مرحله ۱ • پایه‌های نور" else "Level 1 • Light Basics"
+                                },
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.Black.copy(alpha = 0.75f)
+                            )
+                        }
+
+                        Box(
+                            modifier = Modifier
+                                .size(48.dp)
+                                .background(Color.Black, CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.PlayArrow,
+                                contentDescription = "Play",
+                                tint = AmberPrimary,
+                                modifier = Modifier.size(28.dp)
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
 
             // Progression Summary Card
             AnimatedVisibility(
@@ -246,14 +325,7 @@ fun HomeScreen(
                 }
             }
 
-            // Primary Play Action Button
-            LumaButton(
-                text = stringResource(R.string.play_campaign),
-                onClick = onChaptersClick,
-                icon = Icons.Default.PlayArrow,
-                modifier = Modifier.fillMaxWidth(),
-                testTag = "main_play_button"
-            )
+            Spacer(modifier = Modifier.height(8.dp))
 
             // Grid Options Section
             AnimatedVisibility(
@@ -270,7 +342,7 @@ fun HomeScreen(
                     ) {
                         HomeGridTile(
                             title = stringResource(R.string.title_chapters),
-                            subtitle = if (loc.isPersian) "۱۶ فصل معما" else "16 Chapters",
+                            subtitle = if (loc.isPersian) "۱۶ فصل ماجراجویی" else "16 Realms",
                             icon = Icons.Default.AutoAwesome,
                             onClick = onChaptersClick,
                             modifier = Modifier.weight(1f),
@@ -292,7 +364,7 @@ fun HomeScreen(
                     ) {
                         HomeGridTile(
                             title = stringResource(R.string.title_achievements),
-                            subtitle = if (loc.isPersian) "نشان‌ها و اهداف" else "Badges & Goals",
+                            subtitle = if (loc.isPersian) "نشان‌ها و افتخارات" else "Badges & Goals",
                             icon = Icons.Default.EmojiEvents,
                             onClick = onAchievementsClick,
                             modifier = Modifier.weight(1f),
@@ -314,7 +386,7 @@ fun HomeScreen(
                     ) {
                         HomeGridTile(
                             title = stringResource(R.string.title_editor),
-                            subtitle = if (loc.isPersian) "مراحل ساخت شما" else "My Custom Levels",
+                            subtitle = if (loc.isPersian) "ویرایشگر و طراحی مرحله" else "Level Editor",
                             icon = Icons.Default.Edit,
                             onClick = onLevelEditorClick,
                             modifier = Modifier.weight(1f),
@@ -322,7 +394,7 @@ fun HomeScreen(
                         )
                         HomeGridTile(
                             title = stringResource(R.string.title_settings),
-                            subtitle = if (loc.isPersian) "زبان، ظاهر و صدا" else "Audio & Themes",
+                            subtitle = if (loc.isPersian) "تنظیمات و زبان" else "Audio & Settings",
                             icon = Icons.Default.Settings,
                             onClick = onSettingsClick,
                             modifier = Modifier.weight(1f),
@@ -331,6 +403,8 @@ fun HomeScreen(
                     }
                 }
             }
+
+            Spacer(modifier = Modifier.height(12.dp))
 
             // Footer
             Row(

@@ -27,8 +27,7 @@ class DefaultChapterRepository : ChapterRepository {
 
     override fun isChapterUnlocked(chapterId: String, totalStarsEarned: Int): Boolean {
         val chapter = getChapter(chapterId) ?: return false
-        // Chapter 1 is always unlocked
         if (chapter.number == 1) return true
-        return totalStarsEarned >= chapter.requiredStarsToUnlock
+        return ir.danialchoopan.lumalogic.di.AppContainer.levelProgressManager.isChapterUnlocked(chapterId)
     }
 }

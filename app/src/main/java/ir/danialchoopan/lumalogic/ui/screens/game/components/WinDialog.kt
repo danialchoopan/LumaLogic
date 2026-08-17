@@ -146,6 +146,20 @@ fun WinDialog(
                     }
                 }
 
+                // Dynamic Star Mastery Message
+                Text(
+                    text = when (result.stars) {
+                        3 -> if (loc.isPersian) "⭐⭐⭐ فوق‌العاده! حل بهینه ۳ ستاره" else "⭐⭐⭐ Flawless 3-Star Master Solution!"
+                        2 -> if (loc.isPersian) "⭐⭐ عالی! با حرکات کمتر یا ذخیره انرژی بیشتر ۳ ستاره بگیرید" else "⭐⭐ Great Job! Try fewer moves for 3 stars"
+                        else -> if (loc.isPersian) "⭐ مرحله حل شد! مسیرهای بهینه‌تری هم برای ستاره‌های بیشتر وجود دارد" else "⭐ Passed! Find a cleaner route for more stars"
+                    },
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = if (result.stars == 3) TargetGreen else AmberPrimary,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    modifier = Modifier.padding(horizontal = 8.dp)
+                )
+
                 // Total Score Banner
                 Card(
                     shape = RoundedCornerShape(16.dp),

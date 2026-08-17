@@ -94,6 +94,7 @@ fun LumaNavGraph(
         composable(LumaDestinations.HOME) {
             HomeScreen(
                 onPlayClick = { navController.navigate(LumaDestinations.CHAPTER_SELECT) },
+                onPlayLevel = { levelId -> navController.navigate("game/$levelId") },
                 onChaptersClick = { navController.navigate(LumaDestinations.CHAPTER_SELECT) },
                 onLevelSelectClick = { navController.navigate(LumaDestinations.LEVEL_SELECT) },
                 onDailyPuzzleClick = { navController.navigate(LumaDestinations.DAILY_PUZZLE) },

@@ -64,6 +64,62 @@ class LevelProgressManager(
         return progressRepository.getProgress(levelId)?.completed == true
     }
 
+    fun isChapterUnlocked(chapterId: String): Boolean {
+        val chapter = LevelRegistry.chapters.find { it.id == chapterId } ?: return false
+        if (chapter.number == 1) return true
+
+        val prevChapterIndex = chapter.number - 2
+        if (prevChapterIndex !in LevelRegistry.chapters.indices) return false
+        val prevChapter = LevelRegistry.chapters[prevChapterIndex]
+
+        val prevLevels = LevelRegistry.getLevelsForChapter(prevChapter.id)
+        val completedCount = prevLevels.count { isLevelCompleted(it.levelId) }
+        // Chapter is unlocked if player has completed at least 12 of 16 levels in the previous chapter
+        return completedCount >= 12
+    }
+
+    fun isLevelUnlocked(levelId: String): Boolean {
+        val allLevels = LevelRegistry.getAllLevels()
+        val level = allLevels.find { it.levelId == levelId } ?: return true // custom levels unlocked by default
+
+        // Find which chapter this level belongs to
+        val chapterId = level.tags.firstOrNull { it.startsWith("chapter_") } ?: return true
+        if (!isChapterUnlocked(chapterId)) return false
+
+        val chapterLevels = LevelRegistry.getLevelsForChapter(chapterId)
+        val levelIndexInChapter = chapterLevels.indexOfFirst { it.levelId == levelId }
+        if (levelIndexInChapter <= 0) return true // First level of an unlocked chapter is always unlocked
+
+        // Otherwise, previous level in the chapter must be completed
+        val previousLevel = chapterLevels[levelIndexInChapter - 1]
+        return isLevelCompleted(previousLevel.levelId)
+    }
+
+    fun getNextPlayableLevel(): ir.danialchoopan.lumalogic.data.model.Level {
+        val allLevels = LevelRegistry.getAllLevels()
+        for (level in allLevels) {
+            if (!isLevelCompleted(level.levelId) && isLevelUnlocked(level.levelId)) {
+                return level
+            }
+        }
+        // If all completed or none found, return the very first level or last level
+        return allLevels.firstOrNull() ?: LevelRegistry.getAllLevels().first()
+    }
+
+    fun hasStartedGame(): Boolean {
+        return progressRepository.getAllProgress().any { it.completed }
+    }
+
+    fun getChapterCompletedCount(chapterId: String): Int {
+        val levels = LevelRegistry.getLevelsForChapter(chapterId)
+        return levels.count { isLevelCompleted(it.levelId) }
+    }
+
+    fun getChapterStarsEarned(chapterId: String): Int {
+        val levels = LevelRegistry.getLevelsForChapter(chapterId)
+        return levels.sumOf { getProgress(it.levelId)?.stars ?: 0 }
+    }
+
     fun getPlayerStats(achievementsUnlocked: Int = 0, totalAchievements: Int = 11, favoriteCount: Int = 0): PlayerStats {
         val allProgress = progressRepository.getAllProgress().filter { it.completed }
         val totalCompleted = allProgress.size
