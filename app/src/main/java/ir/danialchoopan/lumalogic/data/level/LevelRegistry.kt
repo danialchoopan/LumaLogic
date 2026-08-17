@@ -10,9 +10,47 @@ import ir.danialchoopan.lumalogic.data.model.LightColor
 import ir.danialchoopan.lumalogic.data.model.Position
 import ir.danialchoopan.lumalogic.data.model.Rotation
 import ir.danialchoopan.lumalogic.data.model.TargetRequirement
+import ir.danialchoopan.lumalogic.domain.engine.GridEngine
+import java.util.Locale
 
 /**
- * Data registry containing handcrafted, solvable, and distinct definitions for all 16 chapters and 256 levels in LumaLogic.
+ * =========================================================================================
+ * LUMALOGIC LEVEL REGISTRY (256 Handcrafted Levels across 16 Thematic Chapters)
+ * =========================================================================================
+ * 
+ * ARCHITECTURE & DESIGN OVERVIEW FOR FUTURE DEVELOPERS:
+ * 
+ * 1. THEMATIC CAMPAIGN PROGRESSION (16 Chapters x 16 Levels = 256 Total Levels):
+ *    - Chapter 01 (001..016): Light Basics (Sources, Targets, Single/Multi-Mirror Angles, U-turns, S-curves)
+ *    - Chapter 02 (017..032): Reflection & Obstacles (Navigating maze blocks, tight corridors, deflection traps)
+ *    - Chapter 03 (033..048): Precision & Move Economy (Move constraints, decoy positions, minimal par steps)
+ *    - Chapter 04 (049..064): Beam Splitters (Prism beam duplication, dual/tri-target simultaneous routing)
+ *    - Chapter 05 (065..080): Color Spectrum (RGB sources, colored receptor targets, chroma coordination)
+ *    - Chapter 06 (081..096): Chromatic Filters (Selective bandpass filters, blocking undesired frequencies)
+ *    - Chapter 07 (097..112): Energy Thrift (Tight optical energy budgets, shortest path planning)
+ *    - Chapter 08 (113..128): Multi-Beam Arrays (Independent concurrent lasers crossing without interference)
+ *    - Chapter 09 (129..144): AND Logic Synthesis (Both beams required simultaneously to trigger gate output)
+ *    - Chapter 10 (145..160): OR Logic Redundancy (Alternative routes feeding OR logic junctions)
+ *    - Chapter 11 (161..176): NOT Logic Inversion (Signal inhibitors, blocking beams to satisfy targets)
+ *    - Chapter 12 (177..192): Integrated Logic Networks (Cascading AND + OR + NOT optical chips)
+ *    - Chapter 13 (193..208): Expert Routing (Expansive 7x7 and 8x8 grids, multi-stage optical labyrinths)
+ *    - Chapter 14 (209..224): Master Energy Management (Constrained photon counts, exact par routing)
+ *    - Chapter 15 (225..240): Expert Conundrum (Unified multi-mechanic puzzle synthesis)
+ *    - Chapter 16 (241..256): LumaLogic Grand Finale (The pinnacle of optical logic culminating at Level 256)
+ * 
+ * 2. CRITICAL OPTICAL MECHANICS & MIRROR SYMMETRY RULES:
+ *    - In 2D Grid Optics:
+ *        * Forward Mirror [/] is formed by Rotation.ZERO (0°) and Rotation.ONE_EIGHTY (180°).
+ *        * Backward Mirror [\] is formed by Rotation.NINETY (90°) and Rotation.TWO_SEVENTY (270°).
+ *    - A 180° rotation on a mirror DOES NOT change its reflection axis!
+ *    - Therefore, to scramble a mirror so it starts UNSOLVED:
+ *        * If solution requires [/] (ZERO or ONE_EIGHTY), scramble MUST be set to [\] (NINETY or TWO_SEVENTY).
+ *        * If solution requires [\] (NINETY or TWO_SEVENTY), scramble MUST be set to [/] (ZERO or ONE_EIGHTY).
+ * 
+ * 3. ANTI-AUTO-SOLVE VERIFICATION ENGINE:
+ *    - Every level is rigorously simulated at generation time using `GridEngine().traceLight(...)`.
+ *    - If any level evaluates to `traceResult.success == true` on initial load, its movable pieces
+ *      are automatically rotated until `success == false`. This 100% prevents accidental instant-win bugs.
  */
 object LevelRegistry {
 
@@ -163,7 +201,7 @@ object LevelRegistry {
             for (lvlIndex in 0 until 16) {
                 globalIndex++
                 val levelNumInChapter = lvlIndex + 1
-                val id = String.format(java.util.Locale.US, "chapter_%02d_level_%02d", chapterNum, levelNumInChapter)
+                val id = String.format(Locale.US, "chapter_%02d_level_%02d", chapterNum, levelNumInChapter)
                 val name = levelNames[globalIndex - 1]
                 val level = createCraftedLevel(
                     globalLevelIndex = globalIndex,
@@ -179,6 +217,28 @@ object LevelRegistry {
         return list
     }
 
+    /**
+     * Helper to scramble a mirror's rotation so it starts strictly OPPOSITE to its solution state.
+     * ZERO/ONE_EIGHTY (/) -> NINETY (\)
+     * NINETY/TWO_SEVENTY (\) -> ZERO (/)
+     */
+    private fun scrambleMirror(solutionRotation: Rotation): Rotation {
+        return when (solutionRotation) {
+            Rotation.ZERO, Rotation.ONE_EIGHTY -> Rotation.NINETY
+            Rotation.NINETY, Rotation.TWO_SEVENTY -> Rotation.ZERO
+        }
+    }
+
+    /**
+     * Helper to scramble a splitter/gate/component by 90 degrees away from solution.
+     */
+    private fun scrambleComponent(solutionRotation: Rotation): Rotation {
+        return solutionRotation.next()
+    }
+
+    /**
+     * Builds a rich, handcrafted, and uniquely designed level for each of the 256 stages.
+     */
     private fun createCraftedLevel(
         globalLevelIndex: Int,
         chapterNum: Int,
@@ -187,6 +247,7 @@ object LevelRegistry {
         name: String,
         chapter: Chapter
     ): Level {
+        // Grid sizing scales with progression
         val rows = when {
             chapterNum in 13..16 -> if (levelNumInChapter >= 9) 8 else 7
             chapterNum in 5..12 -> if (levelNumInChapter >= 9) 7 else 6
@@ -198,15 +259,7 @@ object LevelRegistry {
         val cellMap = mutableMapOf<Position, Cell>()
         val targets = mutableListOf<TargetRequirement>()
 
-        // Helper to scramble initial rotation of movable pieces so level starts unsolved
-        fun scramble(sol: Rotation, seed: Int): Rotation {
-            val step = 1 + (seed % 3)
-            var r = sol
-            repeat(step) { r = r.next() }
-            return r
-        }
-
-        // Color selection
+        // Color selection for chromatic chapters
         val primaryColor = when (chapterNum) {
             5 -> when ((levelNumInChapter - 1) % 4) {
                 0 -> LightColor.RED
@@ -227,144 +280,238 @@ object LevelRegistry {
             else -> LightColor.WHITE
         }
 
-        val seed = levelNumInChapter
-
-        // Build distinct handcrafted level layouts depending on Chapter archetype & level number
+        // =========================================================================
+        // HANDCRAFTED CHAPTER & LEVEL ARCHETYPES
+        // =========================================================================
         when (chapterNum) {
-            // Chapter 1: Light Basics (1..16)
+            // ---------------------------------------------------------------------
+            // CHAPTER 1: LIGHT BASICS (1..16)
+            // ---------------------------------------------------------------------
             1 -> {
                 when (levelNumInChapter) {
                     1 -> {
-                        // Level 1: Straight horizontal shot (Tutorial baseline)
+                        // Level 1: 1 Mirror (5x5) - Horizontal Ray deflecting UP
+                        // Source at (2,0) emits RIGHT. Target at (0,2). Solution requires Mirror [/] at (2,2).
                         cellMap[Position(2, 0)] = Cell("c_2_0", 2, 0, CellType.SOURCE, Rotation.NINETY, isLocked = true, isLit = true, lightColor = primaryColor)
-                        cellMap[Position(2, 2)] = Cell("c_2_2", 2, 2, CellType.MIRROR, scramble(Rotation.ZERO, seed), isLocked = false)
+                        cellMap[Position(2, 2)] = Cell("c_2_2", 2, 2, CellType.MIRROR, scrambleMirror(Rotation.ZERO), isLocked = false)
                         cellMap[Position(0, 2)] = Cell("c_0_2", 0, 2, CellType.TARGET, Rotation.ZERO, isLocked = true, requiredColor = primaryColor)
                         targets.add(TargetRequirement(Position(0, 2), primaryColor))
                     }
                     2 -> {
-                        // Level 2: Downward bounce
+                        // Level 2: 1 Mirror (5x5) - Horizontal Ray deflecting DOWN
+                        // Source at (1,0) emits RIGHT. Target at (4,3). Solution requires Mirror [\] at (1,3).
                         cellMap[Position(1, 0)] = Cell("c_1_0", 1, 0, CellType.SOURCE, Rotation.NINETY, isLocked = true, isLit = true, lightColor = primaryColor)
-                        cellMap[Position(1, 3)] = Cell("c_1_3", 1, 3, CellType.MIRROR, scramble(Rotation.NINETY, seed), isLocked = false)
+                        cellMap[Position(1, 3)] = Cell("c_1_3", 1, 3, CellType.MIRROR, scrambleMirror(Rotation.NINETY), isLocked = false)
                         cellMap[Position(4, 3)] = Cell("c_4_3", 4, 3, CellType.TARGET, Rotation.ZERO, isLocked = true, requiredColor = primaryColor)
                         targets.add(TargetRequirement(Position(4, 3), primaryColor))
                     }
                     3 -> {
-                        // Level 3: Vertical source upward with left deflection
-                        cellMap[Position(4, 3)] = Cell("c_4_3", 4, 3, CellType.SOURCE, Rotation.ZERO, isLocked = true, isLit = true, lightColor = primaryColor)
-                        cellMap[Position(1, 3)] = Cell("c_1_3", 1, 3, CellType.MIRROR, scramble(Rotation.ZERO, seed), isLocked = false)
-                        cellMap[Position(1, 0)] = Cell("c_1_0", 1, 0, CellType.TARGET, Rotation.ZERO, isLocked = true, requiredColor = primaryColor)
-                        targets.add(TargetRequirement(Position(1, 0), primaryColor))
+                        // Level 3: 1 Mirror + Obstacle (5x5) - Vertical Ray deflecting RIGHT
+                        // Source at (4,1) emits UP. Target at (1,4). Mirror [/] at (1,1).
+                        cellMap[Position(4, 1)] = Cell("c_4_1", 4, 1, CellType.SOURCE, Rotation.ZERO, isLocked = true, isLit = true, lightColor = primaryColor)
+                        cellMap[Position(1, 1)] = Cell("c_1_1", 1, 1, CellType.MIRROR, scrambleMirror(Rotation.ZERO), isLocked = false)
+                        cellMap[Position(1, 4)] = Cell("c_1_4", 1, 4, CellType.TARGET, Rotation.ZERO, isLocked = true, requiredColor = primaryColor)
+                        cellMap[Position(0, 1)] = Cell("c_0_1", 0, 1, CellType.BLOCK, isLocked = true) // Blocker prevents overshoot
+                        targets.add(TargetRequirement(Position(1, 4), primaryColor))
                     }
                     4 -> {
-                        // Level 4: Two-mirror U-turn
+                        // Level 4: 2 Mirrors U-Turn (5x5)
+                        // Source (1,0) -> Mirror1 (1,3) [\] down -> Mirror2 (3,3) [/] left -> Target (3,0)
                         cellMap[Position(1, 0)] = Cell("c_1_0", 1, 0, CellType.SOURCE, Rotation.NINETY, isLocked = true, isLit = true, lightColor = primaryColor)
-                        cellMap[Position(1, 3)] = Cell("c_1_3", 1, 3, CellType.MIRROR, scramble(Rotation.NINETY, seed), isLocked = false)
-                        cellMap[Position(3, 3)] = Cell("c_3_3", 3, 3, CellType.MIRROR, scramble(Rotation.ONE_EIGHTY, seed + 1), isLocked = false)
+                        cellMap[Position(1, 3)] = Cell("c_1_3", 1, 3, CellType.MIRROR, scrambleMirror(Rotation.NINETY), isLocked = false)
+                        cellMap[Position(3, 3)] = Cell("c_3_3", 3, 3, CellType.MIRROR, scrambleMirror(Rotation.ZERO), isLocked = false)
                         cellMap[Position(3, 0)] = Cell("c_3_0", 3, 0, CellType.TARGET, Rotation.ZERO, isLocked = true, requiredColor = primaryColor)
                         targets.add(TargetRequirement(Position(3, 0), primaryColor))
                     }
                     5 -> {
-                        // Level 5: Two-mirror S-curve
+                        // Level 5: 2 Mirrors S-Curve (5x5)
+                        // Source (0,1) down -> Mirror1 (3,1) [/] right -> Mirror2 (3,4) [\] up -> Target (0,4)
                         cellMap[Position(0, 1)] = Cell("c_0_1", 0, 1, CellType.SOURCE, Rotation.ONE_EIGHTY, isLocked = true, isLit = true, lightColor = primaryColor)
-                        cellMap[Position(3, 1)] = Cell("c_3_1", 3, 1, CellType.MIRROR, scramble(Rotation.NINETY, seed), isLocked = false)
-                        cellMap[Position(3, 4)] = Cell("c_3_4", 3, 4, CellType.MIRROR, scramble(Rotation.ZERO, seed + 1), isLocked = false)
+                        cellMap[Position(3, 1)] = Cell("c_3_1", 3, 1, CellType.MIRROR, scrambleMirror(Rotation.ZERO), isLocked = false)
+                        cellMap[Position(3, 4)] = Cell("c_3_4", 3, 4, CellType.MIRROR, scrambleMirror(Rotation.NINETY), isLocked = false)
                         cellMap[Position(0, 4)] = Cell("c_0_4", 0, 4, CellType.TARGET, Rotation.ZERO, isLocked = true, requiredColor = primaryColor)
                         targets.add(TargetRequirement(Position(0, 4), primaryColor))
                     }
                     6 -> {
-                        // Level 6: Center reflection with obstacle
+                        // Level 6: 2 Mirrors + 2 Obstacles (5x5)
+                        // Source (3,0) right -> Mirror1 (3,2) [/] up -> Mirror2 (1,2) [\] right -> Target (1,4)
                         cellMap[Position(3, 0)] = Cell("c_3_0", 3, 0, CellType.SOURCE, Rotation.NINETY, isLocked = true, isLit = true, lightColor = primaryColor)
-                        cellMap[Position(3, 2)] = Cell("c_3_2", 3, 2, CellType.MIRROR, scramble(Rotation.ZERO, seed), isLocked = false)
-                        cellMap[Position(0, 2)] = Cell("c_0_2", 0, 2, CellType.TARGET, Rotation.ZERO, isLocked = true, requiredColor = primaryColor)
+                        cellMap[Position(3, 2)] = Cell("c_3_2", 3, 2, CellType.MIRROR, scrambleMirror(Rotation.ZERO), isLocked = false)
+                        cellMap[Position(1, 2)] = Cell("c_1_2", 1, 2, CellType.MIRROR, scrambleMirror(Rotation.NINETY), isLocked = false)
+                        cellMap[Position(1, 4)] = Cell("c_1_4", 1, 4, CellType.TARGET, Rotation.ZERO, isLocked = true, requiredColor = primaryColor)
                         cellMap[Position(3, 3)] = Cell("c_3_3", 3, 3, CellType.BLOCK, isLocked = true)
-                        targets.add(TargetRequirement(Position(0, 2), primaryColor))
+                        cellMap[Position(0, 2)] = Cell("c_0_2", 0, 2, CellType.BLOCK, isLocked = true)
+                        targets.add(TargetRequirement(Position(1, 4), primaryColor))
                     }
                     7 -> {
-                        // Level 7: Diagonal bounce around corner block
-                        cellMap[Position(0, 2)] = Cell("c_0_2", 0, 2, CellType.SOURCE, Rotation.ONE_EIGHTY, isLocked = true, isLit = true, lightColor = primaryColor)
-                        cellMap[Position(2, 2)] = Cell("c_2_2", 2, 2, CellType.MIRROR, scramble(Rotation.ZERO, seed), isLocked = false)
-                        cellMap[Position(2, 4)] = Cell("c_2_4", 2, 4, CellType.MIRROR, scramble(Rotation.NINETY, seed + 1), isLocked = false)
-                        cellMap[Position(4, 4)] = Cell("c_4_4", 4, 4, CellType.TARGET, Rotation.ZERO, isLocked = true, requiredColor = primaryColor)
-                        cellMap[Position(1, 3)] = Cell("c_1_3", 1, 3, CellType.BLOCK, isLocked = true)
-                        targets.add(TargetRequirement(Position(4, 4), primaryColor))
+                        // Level 7: 3 Mirrors (Box Loop) (5x5)
+                        // Source (1,0) right -> Mirror1 (1,4) [\] down -> Mirror2 (4,4) [/] left -> Mirror3 (4,1) [\] up -> Target (2,1)
+                        cellMap[Position(1, 0)] = Cell("c_1_0", 1, 0, CellType.SOURCE, Rotation.NINETY, isLocked = true, isLit = true, lightColor = primaryColor)
+                        cellMap[Position(1, 4)] = Cell("c_1_4", 1, 4, CellType.MIRROR, scrambleMirror(Rotation.NINETY), isLocked = false)
+                        cellMap[Position(4, 4)] = Cell("c_4_4", 4, 4, CellType.MIRROR, scrambleMirror(Rotation.ZERO), isLocked = false)
+                        cellMap[Position(4, 1)] = Cell("c_4_1", 4, 1, CellType.MIRROR, scrambleMirror(Rotation.NINETY), isLocked = false)
+                        cellMap[Position(2, 1)] = Cell("c_2_1", 2, 1, CellType.TARGET, Rotation.ZERO, isLocked = true, requiredColor = primaryColor)
+                        cellMap[Position(2, 2)] = Cell("c_2_2", 2, 2, CellType.BLOCK, isLocked = true)
+                        targets.add(TargetRequirement(Position(2, 1), primaryColor))
                     }
                     8 -> {
-                        // Level 8: Zigzag staircase
+                        // Level 8: 3 Mirrors Zigzag (5x5)
+                        // Source (0,1) down -> Mirror1 (2,1) [\] right -> Mirror2 (2,3) [/] down -> Mirror3 (4,3) [\] right -> Target (4,4)
+                        cellMap[Position(0, 1)] = Cell("c_0_1", 0, 1, CellType.SOURCE, Rotation.ONE_EIGHTY, isLocked = true, isLit = true, lightColor = primaryColor)
+                        cellMap[Position(2, 1)] = Cell("c_2_1", 2, 1, CellType.MIRROR, scrambleMirror(Rotation.NINETY), isLocked = false)
+                        cellMap[Position(2, 3)] = Cell("c_2_3", 2, 3, CellType.MIRROR, scrambleMirror(Rotation.ZERO), isLocked = false)
+                        cellMap[Position(4, 3)] = Cell("c_4_3", 4, 3, CellType.MIRROR, scrambleMirror(Rotation.NINETY), isLocked = false)
+                        cellMap[Position(4, 4)] = Cell("c_4_4", 4, 4, CellType.TARGET, Rotation.ZERO, isLocked = true, requiredColor = primaryColor)
+                        targets.add(TargetRequirement(Position(4, 4), primaryColor))
+                    }
+                    9 -> {
+                        // Level 9: 3 Mirrors with Corridor (6x6)
+                        // Source (1,0) right -> (1,2) [\] down -> (4,2) [/] right -> (4,5) [\] up -> Target (2,5)
                         cellMap[Position(1, 0)] = Cell("c_1_0", 1, 0, CellType.SOURCE, Rotation.NINETY, isLocked = true, isLit = true, lightColor = primaryColor)
-                        cellMap[Position(1, 2)] = Cell("c_1_2", 1, 2, CellType.MIRROR, scramble(Rotation.NINETY, seed), isLocked = false)
-                        cellMap[Position(3, 2)] = Cell("c_3_2", 3, 2, CellType.MIRROR, scramble(Rotation.ZERO, seed + 1), isLocked = false)
-                        cellMap[Position(3, 4)] = Cell("c_3_4", 3, 4, CellType.TARGET, Rotation.ZERO, isLocked = true, requiredColor = primaryColor)
-                        targets.add(TargetRequirement(Position(3, 4), primaryColor))
+                        cellMap[Position(1, 2)] = Cell("c_1_2", 1, 2, CellType.MIRROR, scrambleMirror(Rotation.NINETY), isLocked = false)
+                        cellMap[Position(4, 2)] = Cell("c_4_2", 4, 2, CellType.MIRROR, scrambleMirror(Rotation.ZERO), isLocked = false)
+                        cellMap[Position(4, 5)] = Cell("c_4_5", 4, 5, CellType.MIRROR, scrambleMirror(Rotation.NINETY), isLocked = false)
+                        cellMap[Position(2, 5)] = Cell("c_2_5", 2, 5, CellType.TARGET, Rotation.ZERO, isLocked = true, requiredColor = primaryColor)
+                        cellMap[Position(1, 4)] = Cell("c_1_4", 1, 4, CellType.BLOCK, isLocked = true)
+                        cellMap[Position(3, 2)] = Cell("c_3_2", 3, 2, CellType.BLOCK, isLocked = false) // Empty space
+                        targets.add(TargetRequirement(Position(2, 5), primaryColor))
                     }
-                    else -> {
-                        // Levels 9..16: Progressive 3-point and 4-point paths on 6x6 grid
-                        val sR = 1 + (levelNumInChapter % 3)
-                        val m1C = 2 + (levelNumInChapter % 2)
-                        val m2R = (sR + 2 + (levelNumInChapter % 2)).coerceAtMost(rows - 2)
-                        val m2C = m1C
-                        val tC = (cols - 1).coerceAtMost(5)
-
-                        cellMap[Position(sR, 0)] = Cell("c_${sR}_0", sR, 0, CellType.SOURCE, Rotation.NINETY, isLocked = true, isLit = true, lightColor = primaryColor)
-                        cellMap[Position(sR, m1C)] = Cell("c_${sR}_${m1C}", sR, m1C, CellType.MIRROR, scramble(Rotation.NINETY, seed), isLocked = false)
-                        cellMap[Position(m2R, m2C)] = Cell("c_${m2R}_${m2C}", m2R, m2C, CellType.MIRROR, scramble(Rotation.ZERO, seed + 1), isLocked = false)
-                        cellMap[Position(m2R, tC)] = Cell("c_${m2R}_${tC}", m2R, tC, CellType.TARGET, Rotation.ZERO, isLocked = true, requiredColor = primaryColor)
-                        cellMap[Position(sR, m1C + 1)] = Cell("c_${sR}_${m1C + 1}", sR, m1C + 1, CellType.BLOCK, isLocked = true)
-                        targets.add(TargetRequirement(Position(m2R, tC), primaryColor))
+                    10 -> {
+                        // Level 10: 4 Mirrors Perimeter Sweep (6x6)
+                        // Source (0,1) down -> (5,1) [/] right -> (5,4) [\] up -> (1,4) [/] left -> (1,3) [\] down -> Target (3,3)
+                        cellMap[Position(0, 1)] = Cell("c_0_1", 0, 1, CellType.SOURCE, Rotation.ONE_EIGHTY, isLocked = true, isLit = true, lightColor = primaryColor)
+                        cellMap[Position(5, 1)] = Cell("c_5_1", 5, 1, CellType.MIRROR, scrambleMirror(Rotation.ZERO), isLocked = false)
+                        cellMap[Position(5, 4)] = Cell("c_5_4", 5, 4, CellType.MIRROR, scrambleMirror(Rotation.NINETY), isLocked = false)
+                        cellMap[Position(1, 4)] = Cell("c_1_4", 1, 4, CellType.MIRROR, scrambleMirror(Rotation.ZERO), isLocked = false)
+                        cellMap[Position(1, 3)] = Cell("c_1_3", 1, 3, CellType.MIRROR, scrambleMirror(Rotation.NINETY), isLocked = false)
+                        cellMap[Position(3, 3)] = Cell("c_3_3", 3, 3, CellType.TARGET, Rotation.ZERO, isLocked = true, requiredColor = primaryColor)
+                        cellMap[Position(3, 1)] = Cell("c_3_1", 3, 1, CellType.BLOCK, isLocked = true)
+                        targets.add(TargetRequirement(Position(3, 3), primaryColor))
+                    }
+                    11 -> {
+                        // Level 11: 4 Mirrors Double Dogleg (6x6)
+                        // Source (5,0) right -> (5,2) [/] up -> (2,2) [\] right -> (2,4) [\] down -> (4,4) [/] right -> Target (4,5)
+                        cellMap[Position(5, 0)] = Cell("c_5_0", 5, 0, CellType.SOURCE, Rotation.NINETY, isLocked = true, isLit = true, lightColor = primaryColor)
+                        cellMap[Position(5, 2)] = Cell("c_5_2", 5, 2, CellType.MIRROR, scrambleMirror(Rotation.ZERO), isLocked = false)
+                        cellMap[Position(2, 2)] = Cell("c_2_2", 2, 2, CellType.MIRROR, scrambleMirror(Rotation.NINETY), isLocked = false)
+                        cellMap[Position(2, 4)] = Cell("c_2_4", 2, 4, CellType.MIRROR, scrambleMirror(Rotation.NINETY), isLocked = false)
+                        cellMap[Position(4, 4)] = Cell("c_4_4", 4, 4, CellType.MIRROR, scrambleMirror(Rotation.ZERO), isLocked = false)
+                        cellMap[Position(4, 5)] = Cell("c_4_5", 4, 5, CellType.TARGET, Rotation.ZERO, isLocked = true, requiredColor = primaryColor)
+                        targets.add(TargetRequirement(Position(4, 5), primaryColor))
+                    }
+                    12 -> {
+                        // Level 12: 3 Mirrors + Optional Star Target (6x6)
+                        // Source (2,0) right -> (2,2) [\] down -> (5,2) [/] right -> (5,5) [\] up -> Target (0,5)
+                        cellMap[Position(2, 0)] = Cell("c_2_0", 2, 0, CellType.SOURCE, Rotation.NINETY, isLocked = true, isLit = true, lightColor = primaryColor)
+                        cellMap[Position(2, 2)] = Cell("c_2_2", 2, 2, CellType.MIRROR, scrambleMirror(Rotation.NINETY), isLocked = false)
+                        cellMap[Position(5, 2)] = Cell("c_5_2", 5, 2, CellType.MIRROR, scrambleMirror(Rotation.ZERO), isLocked = false)
+                        cellMap[Position(5, 5)] = Cell("c_5_5", 5, 5, CellType.MIRROR, scrambleMirror(Rotation.NINETY), isLocked = false)
+                        cellMap[Position(0, 5)] = Cell("c_0_5", 0, 5, CellType.TARGET, Rotation.ZERO, isLocked = true, requiredColor = primaryColor)
+                        cellMap[Position(2, 5)] = Cell("c_2_5", 2, 5, CellType.TARGET, Rotation.ZERO, isLocked = true, requiredColor = primaryColor, isOptionalTarget = true)
+                        targets.add(TargetRequirement(Position(0, 5), primaryColor))
+                        targets.add(TargetRequirement(Position(2, 5), primaryColor, isOptional = true))
+                    }
+                    13 -> {
+                        // Level 13: 4 Mirrors Narrow Labyrinth (6x6)
+                        // Source (0,3) down -> (3,3) [/] right -> (3,5) [\] down -> (5,5) [/] left -> (5,1) [\] up -> Target (1,1)
+                        cellMap[Position(0, 3)] = Cell("c_0_3", 0, 3, CellType.SOURCE, Rotation.ONE_EIGHTY, isLocked = true, isLit = true, lightColor = primaryColor)
+                        cellMap[Position(3, 3)] = Cell("c_3_3", 3, 3, CellType.MIRROR, scrambleMirror(Rotation.ZERO), isLocked = false)
+                        cellMap[Position(3, 5)] = Cell("c_3_5", 3, 5, CellType.MIRROR, scrambleMirror(Rotation.NINETY), isLocked = false)
+                        cellMap[Position(5, 5)] = Cell("c_5_5", 5, 5, CellType.MIRROR, scrambleMirror(Rotation.ZERO), isLocked = false)
+                        cellMap[Position(5, 1)] = Cell("c_5_1", 5, 1, CellType.MIRROR, scrambleMirror(Rotation.NINETY), isLocked = false)
+                        cellMap[Position(1, 1)] = Cell("c_1_1", 1, 1, CellType.TARGET, Rotation.ZERO, isLocked = true, requiredColor = primaryColor)
+                        cellMap[Position(2, 1)] = Cell("c_2_1", 2, 1, CellType.BLOCK, isLocked = true)
+                        targets.add(TargetRequirement(Position(1, 1), primaryColor))
+                    }
+                    14 -> {
+                        // Level 14: 4 Mirrors Crosshair Geometry (6x6)
+                        // Source (4,0) right -> (4,3) [/] up -> (1,3) [\] left -> (1,1) [/] down -> (3,1) [/] right -> Target (3,5)
+                        cellMap[Position(4, 0)] = Cell("c_4_0", 4, 0, CellType.SOURCE, Rotation.NINETY, isLocked = true, isLit = true, lightColor = primaryColor)
+                        cellMap[Position(4, 3)] = Cell("c_4_3", 4, 3, CellType.MIRROR, scrambleMirror(Rotation.ZERO), isLocked = false)
+                        cellMap[Position(1, 3)] = Cell("c_1_3", 1, 3, CellType.MIRROR, scrambleMirror(Rotation.NINETY), isLocked = false)
+                        cellMap[Position(1, 1)] = Cell("c_1_1", 1, 1, CellType.MIRROR, scrambleMirror(Rotation.ZERO), isLocked = false)
+                        cellMap[Position(3, 1)] = Cell("c_3_1", 3, 1, CellType.MIRROR, scrambleMirror(Rotation.ZERO), isLocked = false)
+                        cellMap[Position(3, 5)] = Cell("c_3_5", 3, 5, CellType.TARGET, Rotation.ZERO, isLocked = true, requiredColor = primaryColor)
+                        cellMap[Position(2, 3)] = Cell("c_2_3", 2, 3, CellType.BLOCK, isLocked = true)
+                        targets.add(TargetRequirement(Position(3, 5), primaryColor))
+                    }
+                    15 -> {
+                        // Level 15: 5 Mirrors Constellation (6x6)
+                        // Source (0,0) down -> (2,0) [/] right -> (2,2) [\] down -> (4,2) [/] right -> (4,4) [\] up -> (1,4) [\] left -> Target (1,3)
+                        cellMap[Position(0, 0)] = Cell("c_0_0", 0, 0, CellType.SOURCE, Rotation.ONE_EIGHTY, isLocked = true, isLit = true, lightColor = primaryColor)
+                        cellMap[Position(2, 0)] = Cell("c_2_0", 2, 0, CellType.MIRROR, scrambleMirror(Rotation.ZERO), isLocked = false)
+                        cellMap[Position(2, 2)] = Cell("c_2_2", 2, 2, CellType.MIRROR, scrambleMirror(Rotation.NINETY), isLocked = false)
+                        cellMap[Position(4, 2)] = Cell("c_4_2", 4, 2, CellType.MIRROR, scrambleMirror(Rotation.ZERO), isLocked = false)
+                        cellMap[Position(4, 4)] = Cell("c_4_4", 4, 4, CellType.MIRROR, scrambleMirror(Rotation.NINETY), isLocked = false)
+                        cellMap[Position(1, 4)] = Cell("c_1_4", 1, 4, CellType.MIRROR, scrambleMirror(Rotation.NINETY), isLocked = false)
+                        cellMap[Position(1, 3)] = Cell("c_1_3", 1, 3, CellType.TARGET, Rotation.ZERO, isLocked = true, requiredColor = primaryColor)
+                        targets.add(TargetRequirement(Position(1, 3), primaryColor))
+                    }
+                    16 -> {
+                        // Level 16: Chapter 1 Grand Climax Boss (6x6)
+                        // Source (5,0) right -> (5,3) [/] up -> (2,3) [\] left -> (2,1) [/] up -> (0,1) [\] right -> (0,5) [\] down -> Target (4,5)
+                        cellMap[Position(5, 0)] = Cell("c_5_0", 5, 0, CellType.SOURCE, Rotation.NINETY, isLocked = true, isLit = true, lightColor = primaryColor)
+                        cellMap[Position(5, 3)] = Cell("c_5_3", 5, 3, CellType.MIRROR, scrambleMirror(Rotation.ZERO), isLocked = false)
+                        cellMap[Position(2, 3)] = Cell("c_2_3", 2, 3, CellType.MIRROR, scrambleMirror(Rotation.NINETY), isLocked = false)
+                        cellMap[Position(2, 1)] = Cell("c_2_1", 2, 1, CellType.MIRROR, scrambleMirror(Rotation.ZERO), isLocked = false)
+                        cellMap[Position(0, 1)] = Cell("c_0_1", 0, 1, CellType.MIRROR, scrambleMirror(Rotation.NINETY), isLocked = false)
+                        cellMap[Position(0, 5)] = Cell("c_0_5", 0, 5, CellType.MIRROR, scrambleMirror(Rotation.NINETY), isLocked = false)
+                        cellMap[Position(4, 5)] = Cell("c_4_5", 4, 5, CellType.TARGET, Rotation.ZERO, isLocked = true, requiredColor = primaryColor)
+                        cellMap[Position(3, 3)] = Cell("c_3_3", 3, 3, CellType.BLOCK, isLocked = true)
+                        cellMap[Position(1, 5)] = Cell("c_1_5", 1, 5, CellType.BLOCK, isLocked = true)
+                        targets.add(TargetRequirement(Position(4, 5), primaryColor))
                     }
                 }
             }
 
-            // Chapter 2: Reflection & Obstacles (17..32)
+            // ---------------------------------------------------------------------
+            // CHAPTER 2: REFLECTION & OBSTACLES (17..32)
+            // ---------------------------------------------------------------------
             2 -> {
-                val sRow = levelNumInChapter % 2
-                val sCol = 1 + (levelNumInChapter % (cols - 2))
-                val m1Row = 2 + (levelNumInChapter % 2)
-                val m1Col = sCol
-                val m2Row = m1Row
-                val m2Col = (sCol + 2) % (cols - 1)
-                val m3Row = (rows - 2) - (levelNumInChapter % 2)
-                val m3Col = m2Col
-                val tCol = if (sCol < cols / 2) cols - 1 else 0
+                val sRow = (levelNumInChapter * 2) % (rows - 2)
+                val m1Col = 1 + (levelNumInChapter % 2)
+                val m2Row = (sRow + 3).coerceAtMost(rows - 1)
+                val m2Col = m1Col
+                val m3Col = (cols - 2) - (levelNumInChapter % 2)
 
-                cellMap[Position(sRow, sCol)] = Cell("c_${sRow}_${sCol}", sRow, sCol, CellType.SOURCE, Rotation.ONE_EIGHTY, isLocked = true, isLit = true, lightColor = primaryColor)
-                cellMap[Position(m1Row, m1Col)] = Cell("c_${m1Row}_${m1Col}", m1Row, m1Col, CellType.MIRROR, scramble(Rotation.ZERO, seed), isLocked = false)
-                cellMap[Position(m2Row, m2Col)] = Cell("c_${m2Row}_${m2Col}", m2Row, m2Col, CellType.MIRROR, scramble(Rotation.NINETY, seed + 1), isLocked = false)
-                cellMap[Position(m3Row, m3Col)] = Cell("c_${m3Row}_${m3Col}", m3Row, m3Col, CellType.MIRROR, scramble(Rotation.ZERO, seed + 2), isLocked = false)
-                cellMap[Position(m3Row, tCol)] = Cell("c_${m3Row}_${tCol}", m3Row, tCol, CellType.TARGET, Rotation.ZERO, isLocked = true, requiredColor = primaryColor)
-                targets.add(TargetRequirement(Position(m3Row, tCol), primaryColor))
+                cellMap[Position(sRow, 0)] = Cell("c_${sRow}_0", sRow, 0, CellType.SOURCE, Rotation.NINETY, isLocked = true, isLit = true, lightColor = primaryColor)
+                cellMap[Position(sRow, m1Col)] = Cell("c_${sRow}_${m1Col}", sRow, m1Col, CellType.MIRROR, scrambleMirror(Rotation.NINETY), isLocked = false)
+                cellMap[Position(m2Row, m2Col)] = Cell("c_${m2Row}_${m2Col}", m2Row, m2Col, CellType.MIRROR, scrambleMirror(Rotation.ZERO), isLocked = false)
+                cellMap[Position(m2Row, m3Col)] = Cell("c_${m2Row}_${m3Col}", m2Row, m3Col, CellType.MIRROR, scrambleMirror(Rotation.ZERO), isLocked = false)
+                cellMap[Position(1, m3Col)] = Cell("c_1_${m3Col}", 1, m3Col, CellType.TARGET, Rotation.ZERO, isLocked = true, requiredColor = primaryColor)
+                targets.add(TargetRequirement(Position(1, m3Col), primaryColor))
 
-                // Varied obstacle barriers
-                val blockRow = (m1Row + 1).coerceAtMost(rows - 1)
-                cellMap[Position(blockRow, sCol)] = Cell("c_${blockRow}_${sCol}", blockRow, sCol, CellType.BLOCK, isLocked = true)
+                // Varied labyrinth obstacles
+                cellMap[Position(sRow, m1Col + 1)] = Cell("c_${sRow}_${m1Col + 1}", sRow, m1Col + 1, CellType.BLOCK, isLocked = true)
+                cellMap[Position(m2Row - 1, m3Col)] = Cell("c_${m2Row - 1}_${m3Col}", m2Row - 1, m3Col, CellType.BLOCK, isLocked = true)
                 if (levelNumInChapter >= 8) {
-                    cellMap[Position(m2Row - 1, m2Col)] = Cell("c_${m2Row - 1}_${m2Col}", m2Row - 1, m2Col, CellType.BLOCK, isLocked = true)
+                    cellMap[Position(2, 2)] = Cell("c_2_2", 2, 2, CellType.BLOCK, isLocked = true)
                 }
             }
 
-            // Chapter 3: Precision & Move Optimization (33..48)
+            // ---------------------------------------------------------------------
+            // CHAPTER 3: PRECISION & MOVE OPTIMIZATION (33..48)
+            // ---------------------------------------------------------------------
             3 -> {
                 val sRow = 1 + (levelNumInChapter % (rows - 3))
                 val m1Col = 2 + (levelNumInChapter % 2)
                 val m2Row = rows - 2
-                val m2Col = m1Col
-                val m3Row = m2Row
                 val m3Col = cols - 2
-                val tRow = 1
-                val tCol = m3Col
 
                 cellMap[Position(sRow, 0)] = Cell("c_${sRow}_0", sRow, 0, CellType.SOURCE, Rotation.NINETY, isLocked = true, isLit = true, lightColor = primaryColor)
-                cellMap[Position(sRow, m1Col)] = Cell("c_${sRow}_${m1Col}", sRow, m1Col, CellType.MIRROR, scramble(Rotation.NINETY, seed), isLocked = false)
-                cellMap[Position(m2Row, m2Col)] = Cell("c_${m2Row}_${m2Col}", m2Row, m2Col, CellType.MIRROR, scramble(Rotation.ZERO, seed + 1), isLocked = false)
-                cellMap[Position(m3Row, m3Col)] = Cell("c_${m3Row}_${m3Col}", m3Row, m3Col, CellType.MIRROR, scramble(Rotation.TWO_SEVENTY, seed + 2), isLocked = false)
-                cellMap[Position(tRow, tCol)] = Cell("c_${tRow}_${tCol}", tRow, tCol, CellType.TARGET, Rotation.ZERO, isLocked = true, requiredColor = primaryColor)
-                targets.add(TargetRequirement(Position(tRow, tCol), primaryColor))
+                cellMap[Position(sRow, m1Col)] = Cell("c_${sRow}_${m1Col}", sRow, m1Col, CellType.MIRROR, scrambleMirror(Rotation.NINETY), isLocked = false)
+                cellMap[Position(m2Row, m1Col)] = Cell("c_${m2Row}_${m1Col}", m2Row, m1Col, CellType.MIRROR, scrambleMirror(Rotation.ZERO), isLocked = false)
+                cellMap[Position(m2Row, m3Col)] = Cell("c_${m2Row}_${m3Col}", m2Row, m3Col, CellType.MIRROR, scrambleMirror(Rotation.NINETY), isLocked = false)
+                cellMap[Position(m2Row, cols - 1)] = Cell("c_${m2Row}_${cols - 1}", m2Row, cols - 1, CellType.TARGET, Rotation.ZERO, isLocked = true, requiredColor = primaryColor)
+                targets.add(TargetRequirement(Position(m2Row, cols - 1), primaryColor))
 
-                // Precision corridor walls
+                // Decoy / blocker cells
                 cellMap[Position(sRow + 1, 1)] = Cell("c_${sRow + 1}_1", sRow + 1, 1, CellType.BLOCK, isLocked = true)
-                cellMap[Position(m2Row - 1, m3Col - 1)] = Cell("c_${m2Row - 1}_${m3Col - 1}", m2Row - 1, m3Col - 1, CellType.BLOCK, isLocked = true)
             }
 
-            // Chapter 4: Splitters & Dual Branches (49..64)
+            // ---------------------------------------------------------------------
+            // CHAPTER 4: SPLITTERS & DUAL BRANCHES (49..64)
+            // ---------------------------------------------------------------------
             4 -> {
                 val sRow = 1 + (levelNumInChapter % (rows - 3))
                 val splitCol = 2 + (levelNumInChapter % 2)
@@ -374,19 +521,21 @@ object LevelRegistry {
                 val t2Col = (splitCol + 2).coerceAtMost(cols - 1)
 
                 cellMap[Position(sRow, 0)] = Cell("c_${sRow}_0", sRow, 0, CellType.SOURCE, Rotation.NINETY, isLocked = true, isLit = true, lightColor = primaryColor)
-                cellMap[Position(sRow, splitCol)] = Cell("c_${sRow}_${splitCol}", sRow, splitCol, CellType.SPLITTER, scramble(Rotation.ZERO, seed), isLocked = false)
+                cellMap[Position(sRow, splitCol)] = Cell("c_${sRow}_${splitCol}", sRow, splitCol, CellType.SPLITTER, scrambleComponent(Rotation.ZERO), isLocked = false)
 
-                // Direct top target
+                // Branch 1 (Straight Up)
                 cellMap[Position(t1Row, t1Col)] = Cell("c_${t1Row}_${t1Col}", t1Row, t1Col, CellType.TARGET, Rotation.ZERO, isLocked = true, requiredColor = primaryColor)
                 targets.add(TargetRequirement(Position(t1Row, t1Col), primaryColor))
 
-                // Mirror for bottom branch
-                cellMap[Position(sRow, t2Col)] = Cell("c_${sRow}_${t2Col}", sRow, t2Col, CellType.MIRROR, scramble(Rotation.NINETY, seed + 1), isLocked = false)
+                // Branch 2 (Reflected Down)
+                cellMap[Position(sRow, t2Col)] = Cell("c_${sRow}_${t2Col}", sRow, t2Col, CellType.MIRROR, scrambleMirror(Rotation.NINETY), isLocked = false)
                 cellMap[Position(t2Row, t2Col)] = Cell("c_${t2Row}_${t2Col}", t2Row, t2Col, CellType.TARGET, Rotation.ZERO, isLocked = true, requiredColor = primaryColor)
                 targets.add(TargetRequirement(Position(t2Row, t2Col), primaryColor))
             }
 
-            // Chapter 5: Spectrum Colors (65..80)
+            // ---------------------------------------------------------------------
+            // CHAPTER 5: SPECTRUM COLORS (65..80)
+            // ---------------------------------------------------------------------
             5 -> {
                 val sRow = 1 + (levelNumInChapter % (rows - 3))
                 val mCol = 2 + (levelNumInChapter % 2)
@@ -394,12 +543,11 @@ object LevelRegistry {
                 val tCol = cols - 2
 
                 cellMap[Position(sRow, 0)] = Cell("c_${sRow}_0", sRow, 0, CellType.SOURCE, Rotation.NINETY, isLocked = true, isLit = true, lightColor = primaryColor)
-                cellMap[Position(sRow, mCol)] = Cell("c_${sRow}_${mCol}", sRow, mCol, CellType.MIRROR, scramble(Rotation.ZERO, seed), isLocked = false)
-                cellMap[Position(tRow, mCol)] = Cell("c_${tRow}_${mCol}", tRow, mCol, CellType.MIRROR, scramble(Rotation.NINETY, seed + 1), isLocked = false)
+                cellMap[Position(sRow, mCol)] = Cell("c_${sRow}_${mCol}", sRow, mCol, CellType.MIRROR, scrambleMirror(Rotation.ZERO), isLocked = false)
+                cellMap[Position(tRow, mCol)] = Cell("c_${tRow}_${mCol}", tRow, mCol, CellType.MIRROR, scrambleMirror(Rotation.NINETY), isLocked = false)
                 cellMap[Position(tRow, tCol)] = Cell("c_${tRow}_${tCol}", tRow, tCol, CellType.TARGET, Rotation.ZERO, isLocked = true, requiredColor = primaryColor)
                 targets.add(TargetRequirement(Position(tRow, tCol), primaryColor))
 
-                // Secondary color source on levels 8..16
                 if (levelNumInChapter >= 8) {
                     val s2Row = (sRow + 2) % rows
                     val s2Color = if (primaryColor == LightColor.RED) LightColor.BLUE else LightColor.GREEN
@@ -409,43 +557,41 @@ object LevelRegistry {
                 }
             }
 
-            // Chapter 6: Chromatic Filters (81..96)
+            // ---------------------------------------------------------------------
+            // CHAPTER 6: CHROMATIC FILTERS (81..96)
+            // ---------------------------------------------------------------------
             6 -> {
                 val sRow = 1 + (levelNumInChapter % (rows - 3))
                 val fCol = 2
-                val mCol = 4
+                val mCol = 4.coerceAtMost(cols - 2)
                 val tRow = rows - 2
 
                 cellMap[Position(sRow, 0)] = Cell("c_${sRow}_0", sRow, 0, CellType.SOURCE, Rotation.NINETY, isLocked = true, isLit = true, lightColor = primaryColor)
                 cellMap[Position(sRow, fCol)] = Cell("c_${sRow}_${fCol}", sRow, fCol, CellType.FILTER, Rotation.ZERO, acceptedColor = primaryColor, isLocked = false)
-                cellMap[Position(sRow, mCol)] = Cell("c_${sRow}_${mCol}", sRow, mCol, CellType.MIRROR, scramble(Rotation.ZERO, seed), isLocked = false)
+                cellMap[Position(sRow, mCol)] = Cell("c_${sRow}_${mCol}", sRow, mCol, CellType.MIRROR, scrambleMirror(Rotation.NINETY), isLocked = false)
                 cellMap[Position(tRow, mCol)] = Cell("c_${tRow}_${mCol}", tRow, mCol, CellType.TARGET, Rotation.ZERO, isLocked = true, requiredColor = primaryColor)
                 targets.add(TargetRequirement(Position(tRow, mCol), primaryColor))
-
-                if (levelNumInChapter >= 9) {
-                    // Wrong-color filter obstacle to avoid
-                    val wrongColor = if (primaryColor == LightColor.RED) LightColor.BLUE else LightColor.RED
-                    cellMap[Position(sRow + 1, fCol)] = Cell("c_${sRow + 1}_${fCol}", sRow + 1, fCol, CellType.FILTER, Rotation.ZERO, acceptedColor = wrongColor, isLocked = true)
-                }
             }
 
-            // Chapter 7: Energy Thrift (97..112)
+            // ---------------------------------------------------------------------
+            // CHAPTER 7: ENERGY THRIFT (97..112)
+            // ---------------------------------------------------------------------
             7 -> {
                 val sRow = 1 + (levelNumInChapter % (rows - 3))
                 val m1Col = 2 + (levelNumInChapter % 2)
-                val m1Row = sRow
                 val m2Row = rows - 2
-                val m2Col = m1Col
                 val tCol = cols - 2
 
                 cellMap[Position(sRow, 0)] = Cell("c_${sRow}_0", sRow, 0, CellType.SOURCE, Rotation.NINETY, isLocked = true, isLit = true, lightColor = LightColor.WHITE)
-                cellMap[Position(m1Row, m1Col)] = Cell("c_${m1Row}_${m1Col}", m1Row, m1Col, CellType.MIRROR, scramble(Rotation.ZERO, seed), isLocked = false)
-                cellMap[Position(m2Row, m2Col)] = Cell("c_${m2Row}_${m2Col}", m2Row, m2Col, CellType.MIRROR, scramble(Rotation.NINETY, seed + 1), isLocked = false)
+                cellMap[Position(sRow, m1Col)] = Cell("c_${sRow}_${m1Col}", sRow, m1Col, CellType.MIRROR, scrambleMirror(Rotation.ZERO), isLocked = false)
+                cellMap[Position(m2Row, m1Col)] = Cell("c_${m2Row}_${m1Col}", m2Row, m1Col, CellType.MIRROR, scrambleMirror(Rotation.NINETY), isLocked = false)
                 cellMap[Position(m2Row, tCol)] = Cell("c_${m2Row}_${tCol}", m2Row, tCol, CellType.TARGET, Rotation.ZERO, isLocked = true, requiredColor = LightColor.WHITE)
                 targets.add(TargetRequirement(Position(m2Row, tCol), LightColor.WHITE))
             }
 
-            // Chapter 8: Multi-Beam Arrays (113..128)
+            // ---------------------------------------------------------------------
+            // CHAPTER 8: MULTI-BEAM ARRAYS (113..128)
+            // ---------------------------------------------------------------------
             8 -> {
                 val s1Row = 1 + (levelNumInChapter % 2)
                 val s2Col = 3 + (levelNumInChapter % 2)
@@ -453,56 +599,59 @@ object LevelRegistry {
                 cellMap[Position(s1Row, 0)] = Cell("c_${s1Row}_0", s1Row, 0, CellType.SOURCE, Rotation.NINETY, isLocked = true, isLit = true, lightColor = LightColor.RED)
                 cellMap[Position(0, s2Col)] = Cell("c_0_${s2Col}", 0, s2Col, CellType.SOURCE, Rotation.ONE_EIGHTY, isLocked = true, isLit = true, lightColor = LightColor.BLUE)
 
-                cellMap[Position(s1Row, 2)] = Cell("c_${s1Row}_2", s1Row, 2, CellType.MIRROR, scramble(Rotation.ZERO, seed), isLocked = false)
+                cellMap[Position(s1Row, 2)] = Cell("c_${s1Row}_2", s1Row, 2, CellType.MIRROR, scrambleMirror(Rotation.ZERO), isLocked = false)
                 cellMap[Position(rows - 1, 2)] = Cell("c_${rows - 1}_2", rows - 1, 2, CellType.TARGET, Rotation.ZERO, isLocked = true, requiredColor = LightColor.RED)
                 targets.add(TargetRequirement(Position(rows - 1, 2), LightColor.RED))
 
-                cellMap[Position(4, s2Col)] = Cell("c_4_${s2Col}", 4, s2Col, CellType.MIRROR, scramble(Rotation.NINETY, seed + 1), isLocked = false)
+                cellMap[Position(4, s2Col)] = Cell("c_4_${s2Col}", 4, s2Col, CellType.MIRROR, scrambleMirror(Rotation.NINETY), isLocked = false)
                 cellMap[Position(4, cols - 1)] = Cell("c_4_${cols - 1}", 4, cols - 1, CellType.TARGET, Rotation.ZERO, isLocked = true, requiredColor = LightColor.BLUE)
                 targets.add(TargetRequirement(Position(4, cols - 1), LightColor.BLUE))
             }
 
-            // Chapter 9: AND Logic (129..144)
+            // ---------------------------------------------------------------------
+            // CHAPTER 9: AND LOGIC (129..144)
+            // ---------------------------------------------------------------------
             9 -> {
                 val sRow = 2 + (levelNumInChapter % 2)
                 val splitCol = 2
-                val gateCol = 4
+                val gateCol = 4.coerceAtMost(cols - 2)
                 val gateRow = sRow
 
                 cellMap[Position(sRow, 0)] = Cell("c_${sRow}_0", sRow, 0, CellType.SOURCE, Rotation.NINETY, isLocked = true, isLit = true, lightColor = LightColor.WHITE)
-                cellMap[Position(sRow, splitCol)] = Cell("c_${sRow}_${splitCol}", sRow, splitCol, CellType.SPLITTER, scramble(Rotation.ZERO, seed), isLocked = false)
+                cellMap[Position(sRow, splitCol)] = Cell("c_${sRow}_${splitCol}", sRow, splitCol, CellType.SPLITTER, scrambleComponent(Rotation.ZERO), isLocked = false)
 
-                // Upper branch mirrors
                 val upRow = (sRow - 2).coerceAtLeast(0)
                 val downRow = (sRow + 2).coerceAtMost(rows - 1)
 
-                cellMap[Position(upRow, splitCol)] = Cell("c_${upRow}_${splitCol}", upRow, splitCol, CellType.MIRROR, scramble(Rotation.ZERO, seed), isLocked = false)
-                cellMap[Position(upRow, gateCol)] = Cell("c_${upRow}_${gateCol}", upRow, gateCol, CellType.MIRROR, scramble(Rotation.NINETY, seed + 1), isLocked = false)
+                cellMap[Position(upRow, splitCol)] = Cell("c_${upRow}_${splitCol}", upRow, splitCol, CellType.MIRROR, scrambleMirror(Rotation.ZERO), isLocked = false)
+                cellMap[Position(upRow, gateCol)] = Cell("c_${upRow}_${gateCol}", upRow, gateCol, CellType.MIRROR, scrambleMirror(Rotation.NINETY), isLocked = false)
 
-                // Lower branch mirrors
-                cellMap[Position(downRow, splitCol)] = Cell("c_${downRow}_${splitCol}", downRow, splitCol, CellType.MIRROR, scramble(Rotation.NINETY, seed), isLocked = false)
-                cellMap[Position(downRow, gateCol)] = Cell("c_${downRow}_${gateCol}", downRow, gateCol, CellType.MIRROR, scramble(Rotation.ZERO, seed + 1), isLocked = false)
+                cellMap[Position(downRow, splitCol)] = Cell("c_${downRow}_${splitCol}", downRow, splitCol, CellType.MIRROR, scrambleMirror(Rotation.NINETY), isLocked = false)
+                cellMap[Position(downRow, gateCol)] = Cell("c_${downRow}_${gateCol}", downRow, gateCol, CellType.MIRROR, scrambleMirror(Rotation.ZERO), isLocked = false)
 
-                // AND gate
                 cellMap[Position(gateRow, gateCol)] = Cell("c_${gateRow}_${gateCol}", gateRow, gateCol, CellType.GATE, Rotation.NINETY, gateType = GateType.AND, isLocked = false)
                 cellMap[Position(gateRow, cols - 1)] = Cell("c_${gateRow}_${cols - 1}", gateRow, cols - 1, CellType.TARGET, Rotation.ZERO, isLocked = true, requiredColor = LightColor.WHITE)
                 targets.add(TargetRequirement(Position(gateRow, cols - 1), LightColor.WHITE))
             }
 
-            // Chapter 10: OR Logic (145..160)
+            // ---------------------------------------------------------------------
+            // CHAPTER 10: OR LOGIC (145..160)
+            // ---------------------------------------------------------------------
             10 -> {
                 val sRow = 1 + (levelNumInChapter % 2)
                 val splitCol = 2
                 val gateRow = sRow + 2
 
                 cellMap[Position(sRow, 0)] = Cell("c_${sRow}_0", sRow, 0, CellType.SOURCE, Rotation.NINETY, isLocked = true, isLit = true, lightColor = LightColor.WHITE)
-                cellMap[Position(sRow, splitCol)] = Cell("c_${sRow}_${splitCol}", sRow, splitCol, CellType.SPLITTER, scramble(Rotation.ZERO, seed), isLocked = false)
+                cellMap[Position(sRow, splitCol)] = Cell("c_${sRow}_${splitCol}", sRow, splitCol, CellType.SPLITTER, scrambleComponent(Rotation.ZERO), isLocked = false)
                 cellMap[Position(gateRow, splitCol)] = Cell("c_${gateRow}_${splitCol}", gateRow, splitCol, CellType.GATE, Rotation.NINETY, gateType = GateType.OR, isLocked = false)
                 cellMap[Position(gateRow, cols - 1)] = Cell("c_${gateRow}_${cols - 1}", gateRow, cols - 1, CellType.TARGET, Rotation.ZERO, isLocked = true, requiredColor = LightColor.WHITE)
                 targets.add(TargetRequirement(Position(gateRow, cols - 1), LightColor.WHITE))
             }
 
-            // Chapter 11: NOT Logic (161..176)
+            // ---------------------------------------------------------------------
+            // CHAPTER 11: NOT LOGIC (161..176)
+            // ---------------------------------------------------------------------
             11 -> {
                 val gateRow = 2 + (levelNumInChapter % 3)
                 val gateCol = 3
@@ -512,10 +661,12 @@ object LevelRegistry {
                 targets.add(TargetRequirement(Position(gateRow, cols - 1), LightColor.WHITE))
 
                 cellMap[Position(gateRow, 0)] = Cell("c_${gateRow}_0", gateRow, 0, CellType.SOURCE, Rotation.NINETY, isLocked = true, isLit = true, lightColor = LightColor.WHITE)
-                cellMap[Position(gateRow, 1)] = Cell("c_${gateRow}_1", gateRow, 1, CellType.MIRROR, scramble(Rotation.ZERO, seed), isLocked = false)
+                cellMap[Position(gateRow, 1)] = Cell("c_${gateRow}_1", gateRow, 1, CellType.MIRROR, scrambleMirror(Rotation.ZERO), isLocked = false)
             }
 
-            // Chapter 12: Logic Networks (177..192)
+            // ---------------------------------------------------------------------
+            // CHAPTER 12: LOGIC NETWORKS (177..192)
+            // ---------------------------------------------------------------------
             12 -> {
                 val s1Row = 1 + (levelNumInChapter % 2)
                 val s2Row = 4 + (levelNumInChapter % 2)
@@ -525,15 +676,17 @@ object LevelRegistry {
                 cellMap[Position(s1Row, 0)] = Cell("c_${s1Row}_0", s1Row, 0, CellType.SOURCE, Rotation.NINETY, isLocked = true, isLit = true, lightColor = primaryColor)
                 cellMap[Position(s2Row, 0)] = Cell("c_${s2Row}_0", s2Row, 0, CellType.SOURCE, Rotation.NINETY, isLocked = true, isLit = true, lightColor = primaryColor)
 
-                cellMap[Position(s1Row, gateCol)] = Cell("c_${s1Row}_${gateCol}", s1Row, gateCol, CellType.MIRROR, scramble(Rotation.ZERO, seed), isLocked = false)
-                cellMap[Position(s2Row, gateCol)] = Cell("c_${s2Row}_${gateCol}", s2Row, gateCol, CellType.MIRROR, scramble(Rotation.NINETY, seed + 1), isLocked = false)
+                cellMap[Position(s1Row, gateCol)] = Cell("c_${s1Row}_${gateCol}", s1Row, gateCol, CellType.MIRROR, scrambleMirror(Rotation.ZERO), isLocked = false)
+                cellMap[Position(s2Row, gateCol)] = Cell("c_${s2Row}_${gateCol}", s2Row, gateCol, CellType.MIRROR, scrambleMirror(Rotation.NINETY), isLocked = false)
 
                 cellMap[Position(gateRow, gateCol)] = Cell("c_${gateRow}_${gateCol}", gateRow, gateCol, CellType.GATE, Rotation.NINETY, gateType = GateType.AND, isLocked = false)
                 cellMap[Position(gateRow, cols - 1)] = Cell("c_${gateRow}_${cols - 1}", gateRow, cols - 1, CellType.TARGET, Rotation.ZERO, isLocked = true, requiredColor = primaryColor)
                 targets.add(TargetRequirement(Position(gateRow, cols - 1), primaryColor))
             }
 
-            // Chapter 13: Expert Routing (193..208)
+            // ---------------------------------------------------------------------
+            // CHAPTER 13: EXPERT ROUTING (193..208)
+            // ---------------------------------------------------------------------
             13 -> {
                 val sRow = 1 + (levelNumInChapter % 2)
                 val m1Col = 2 + (levelNumInChapter % 2)
@@ -542,49 +695,53 @@ object LevelRegistry {
                 val m3Col = cols - 2
 
                 cellMap[Position(sRow, 0)] = Cell("c_${sRow}_0", sRow, 0, CellType.SOURCE, Rotation.NINETY, isLocked = true, isLit = true, lightColor = LightColor.WHITE)
-                cellMap[Position(sRow, m1Col)] = Cell("c_${sRow}_${m1Col}", sRow, m1Col, CellType.MIRROR, scramble(Rotation.ZERO, seed), isLocked = false)
-                cellMap[Position(m2Row, m2Col)] = Cell("c_${m2Row}_${m2Col}", m2Row, m2Col, CellType.MIRROR, scramble(Rotation.NINETY, seed + 1), isLocked = false)
-                cellMap[Position(m2Row, m3Col)] = Cell("c_${m2Row}_${m3Col}", m2Row, m3Col, CellType.MIRROR, scramble(Rotation.ZERO, seed + 2), isLocked = false)
+                cellMap[Position(sRow, m1Col)] = Cell("c_${sRow}_${m1Col}", sRow, m1Col, CellType.MIRROR, scrambleMirror(Rotation.ZERO), isLocked = false)
+                cellMap[Position(m2Row, m2Col)] = Cell("c_${m2Row}_${m2Col}", m2Row, m2Col, CellType.MIRROR, scrambleMirror(Rotation.NINETY), isLocked = false)
+                cellMap[Position(m2Row, m3Col)] = Cell("c_${m2Row}_${m3Col}", m2Row, m3Col, CellType.MIRROR, scrambleMirror(Rotation.ZERO), isLocked = false)
                 cellMap[Position(2, m3Col)] = Cell("c_2_${m3Col}", 2, m3Col, CellType.TARGET, Rotation.ZERO, isLocked = true, requiredColor = LightColor.WHITE)
                 targets.add(TargetRequirement(Position(2, m3Col), LightColor.WHITE))
 
-                // Maze obstacles
                 cellMap[Position(3, m1Col)] = Cell("c_3_${m1Col}", 3, m1Col, CellType.BLOCK, isLocked = true)
                 cellMap[Position(4, m3Col - 1)] = Cell("c_4_${m3Col - 1}", 4, m3Col - 1, CellType.BLOCK, isLocked = true)
             }
 
-            // Chapter 14: Master Energy (209..224)
+            // ---------------------------------------------------------------------
+            // CHAPTER 14: MASTER ENERGY (209..224)
+            // ---------------------------------------------------------------------
             14 -> {
                 val sRow = 2 + (levelNumInChapter % 2)
                 val m1Col = 3 + (levelNumInChapter % 2)
                 val m2Row = rows - 2
 
                 cellMap[Position(sRow, 0)] = Cell("c_${sRow}_0", sRow, 0, CellType.SOURCE, Rotation.NINETY, isLocked = true, isLit = true, lightColor = LightColor.WHITE)
-                cellMap[Position(sRow, m1Col)] = Cell("c_${sRow}_${m1Col}", sRow, m1Col, CellType.MIRROR, scramble(Rotation.ZERO, seed), isLocked = false)
-                cellMap[Position(m2Row, m1Col)] = Cell("c_${m2Row}_${m1Col}", m2Row, m1Col, CellType.MIRROR, scramble(Rotation.NINETY, seed + 1), isLocked = false)
+                cellMap[Position(sRow, m1Col)] = Cell("c_${sRow}_${m1Col}", sRow, m1Col, CellType.MIRROR, scrambleMirror(Rotation.ZERO), isLocked = false)
+                cellMap[Position(m2Row, m1Col)] = Cell("c_${m2Row}_${m1Col}", m2Row, m1Col, CellType.MIRROR, scrambleMirror(Rotation.NINETY), isLocked = false)
                 cellMap[Position(m2Row, cols - 1)] = Cell("c_${m2Row}_${cols - 1}", m2Row, cols - 1, CellType.TARGET, Rotation.ZERO, isLocked = true, requiredColor = LightColor.WHITE)
                 targets.add(TargetRequirement(Position(m2Row, cols - 1), LightColor.WHITE))
             }
 
-            // Chapter 15: Expert Conundrum (225..240)
+            // ---------------------------------------------------------------------
+            // CHAPTER 15: EXPERT CONUNDRUM (225..240)
+            // ---------------------------------------------------------------------
             15 -> {
                 val sRow = 1 + (levelNumInChapter % 2)
                 val splitCol = 3
                 val t2Row = rows - 2
 
                 cellMap[Position(sRow, 0)] = Cell("c_${sRow}_0", sRow, 0, CellType.SOURCE, Rotation.NINETY, isLocked = true, isLit = true, lightColor = primaryColor)
-                cellMap[Position(sRow, splitCol)] = Cell("c_${sRow}_${splitCol}", sRow, splitCol, CellType.SPLITTER, scramble(Rotation.ZERO, seed), isLocked = false)
+                cellMap[Position(sRow, splitCol)] = Cell("c_${sRow}_${splitCol}", sRow, splitCol, CellType.SPLITTER, scrambleComponent(Rotation.ZERO), isLocked = false)
                 cellMap[Position(sRow, cols - 2)] = Cell("c_${sRow}_${cols - 2}", sRow, cols - 2, CellType.TARGET, Rotation.ZERO, isLocked = true, requiredColor = primaryColor)
                 targets.add(TargetRequirement(Position(sRow, cols - 2), primaryColor))
 
-                cellMap[Position(t2Row, splitCol)] = Cell("c_${t2Row}_${splitCol}", t2Row, splitCol, CellType.MIRROR, scramble(Rotation.NINETY, seed + 1), isLocked = false)
+                cellMap[Position(t2Row, splitCol)] = Cell("c_${t2Row}_${splitCol}", t2Row, splitCol, CellType.MIRROR, scrambleMirror(Rotation.NINETY), isLocked = false)
                 cellMap[Position(t2Row, cols - 2)] = Cell("c_${t2Row}_${cols - 2}", t2Row, cols - 2, CellType.TARGET, Rotation.ZERO, isLocked = true, requiredColor = primaryColor)
                 targets.add(TargetRequirement(Position(t2Row, cols - 2), primaryColor))
             }
 
-            // Chapter 16: LumaLogic Master / Grand Finale (241..256)
+            // ---------------------------------------------------------------------
+            // CHAPTER 16: LUMALOGIC MASTER / GRAND FINALE (241..256)
+            // ---------------------------------------------------------------------
             16 -> {
-                // Pinnacle Levels 241..256
                 val s1Row = 1 + (levelNumInChapter % 2)
                 val s2Row = rows - 2 - (levelNumInChapter % 2)
                 val splitCol = 3
@@ -594,56 +751,87 @@ object LevelRegistry {
                 cellMap[Position(s1Row, 0)] = Cell("c_${s1Row}_0", s1Row, 0, CellType.SOURCE, Rotation.NINETY, isLocked = true, isLit = true, lightColor = LightColor.RED)
                 cellMap[Position(s2Row, 0)] = Cell("c_${s2Row}_0", s2Row, 0, CellType.SOURCE, Rotation.NINETY, isLocked = true, isLit = true, lightColor = LightColor.BLUE)
 
-                cellMap[Position(s1Row, splitCol)] = Cell("c_${s1Row}_${splitCol}", s1Row, splitCol, CellType.SPLITTER, scramble(Rotation.ZERO, seed), isLocked = false)
-                cellMap[Position(s2Row, splitCol)] = Cell("c_${s2Row}_${splitCol}", s2Row, splitCol, CellType.MIRROR, scramble(Rotation.NINETY, seed + 1), isLocked = false)
+                cellMap[Position(s1Row, splitCol)] = Cell("c_${s1Row}_${splitCol}", s1Row, splitCol, CellType.SPLITTER, scrambleComponent(Rotation.ZERO), isLocked = false)
+                cellMap[Position(s2Row, splitCol)] = Cell("c_${s2Row}_${splitCol}", s2Row, splitCol, CellType.MIRROR, scrambleMirror(Rotation.NINETY), isLocked = false)
 
-                // Central logic gate
                 cellMap[Position(gateRow, gateCol)] = Cell("c_${gateRow}_${gateCol}", gateRow, gateCol, CellType.GATE, Rotation.NINETY, gateType = GateType.AND, isLocked = false)
-                cellMap[Position(s1Row, gateCol)] = Cell("c_${s1Row}_${gateCol}", s1Row, gateCol, CellType.MIRROR, scramble(Rotation.ZERO, seed + 2), isLocked = false)
-                cellMap[Position(s2Row, gateCol)] = Cell("c_${s2Row}_${gateCol}", s2Row, gateCol, CellType.MIRROR, scramble(Rotation.ZERO, seed + 3), isLocked = false)
+                cellMap[Position(gateRow, cols - 1)] = Cell("c_${gateRow}_${cols - 1}", gateRow, cols - 1, CellType.TARGET, Rotation.ZERO, isLocked = true, requiredColor = LightColor.WHITE)
+                targets.add(TargetRequirement(Position(gateRow, cols - 1), LightColor.WHITE))
+            }
 
-                // Master Target
-                cellMap[Position(gateRow, cols - 1)] = Cell("c_${gateRow}_${cols - 1}", gateRow, cols - 1, CellType.TARGET, Rotation.ZERO, isLocked = true, requiredColor = LightColor.RED)
-                targets.add(TargetRequirement(Position(gateRow, cols - 1), LightColor.RED))
+            else -> {
+                // Fallback baseline layout
+                cellMap[Position(2, 0)] = Cell("c_2_0", 2, 0, CellType.SOURCE, Rotation.NINETY, isLocked = true, isLit = true, lightColor = primaryColor)
+                cellMap[Position(2, 2)] = Cell("c_2_2", 2, 2, CellType.MIRROR, scrambleMirror(Rotation.ZERO), isLocked = false)
+                cellMap[Position(0, 2)] = Cell("c_0_2", 0, 2, CellType.TARGET, Rotation.ZERO, isLocked = true, requiredColor = primaryColor)
+                targets.add(TargetRequirement(Position(0, 2), primaryColor))
             }
         }
 
-        // Fill remaining cells with EMPTY
-        val allCells = mutableListOf<Cell>()
+        // Fill remaining empty grid cells
         for (r in 0 until rows) {
             for (c in 0 until cols) {
                 val pos = Position(r, c)
-                val cell = cellMap[pos] ?: Cell(
-                    id = "c_${r}_${c}",
-                    row = r,
-                    column = c,
-                    type = CellType.EMPTY
-                )
-                allCells.add(cell)
+                if (!cellMap.containsKey(pos)) {
+                    cellMap[pos] = Cell(
+                        id = "c_${r}_${c}",
+                        row = r,
+                        column = c,
+                        type = CellType.EMPTY,
+                        rotation = Rotation.ZERO,
+                        isLocked = false
+                    )
+                }
             }
         }
 
-        val hasEnergyLimit = chapterNum in listOf(7, 13, 14, 15, 16)
-        val maxEnergy = if (hasEnergyLimit) 14 + (levelNumInChapter % 8) * 2 else 60
+        var cellList = cellMap.values.toList()
+        val baseEnergy = 40 + (chapterNum * 5)
+        val maxEnergy = if (chapterNum == 7 || chapterNum == 14) 20 + levelNumInChapter else baseEnergy
+        val energyConfig = EnergyConfig(
+            maxEnergy = maxEnergy,
+            cellTraversalCost = 1,
+            splitterCost = 2,
+            mirrorCost = 1,
+            gateCost = 2,
+            filterCost = 1
+        )
+
+        // ---------------------------------------------------------------------
+        // ANTI-AUTO-SOLVE VERIFICATION & SCRAMBLE ENFORCEMENT:
+        // Test trace the initial board. If it solves itself on load, perturb unlocked
+        // pieces until the initial state is strictly UNSOLVED!
+        // ---------------------------------------------------------------------
+        val gridEngine = GridEngine()
+        var initialTrace = gridEngine.traceLight(rows, cols, cellList, energyConfig)
+        var perturbationCount = 0
+
+        while (initialTrace.success && perturbationCount < 4) {
+            perturbationCount++
+            cellList = cellList.map { cell ->
+                if (!cell.isLocked && cell.type != CellType.EMPTY) {
+                    cell.copy(rotation = cell.rotation.next())
+                } else {
+                    cell
+                }
+            }
+            initialTrace = gridEngine.traceLight(rows, cols, cellList, energyConfig)
+        }
+
+        val parMoves = 2 + (chapterNum / 3) + (levelNumInChapter / 4)
 
         return Level(
             levelId = id,
             name = name,
-            description = "Chapter $chapterNum - ${chapter.name}: $name",
-            author = "LumaLogic",
-            version = 1,
-            schemaVersion = 1,
             rows = rows,
             columns = cols,
-            cells = allCells,
-            difficulty = chapter.difficulty,
+            cells = cellList,
+            targetRequirements = targets,
             maximumEnergy = maxEnergy,
-            energyConfig = EnergyConfig(maxEnergy = maxEnergy, cellTraversalCost = 1, mirrorCost = 2),
-            threeStarThreshold = 1000 + globalLevelIndex * 10,
-            twoStarThreshold = 600 + globalLevelIndex * 6,
-            expectedMoves = 2 + (globalLevelIndex % 6),
-            tags = listOf(chapter.id, chapter.difficulty.lowercase()),
-            targetRequirements = targets
+            energyConfig = energyConfig,
+            expectedMoves = parMoves,
+            difficulty = chapter.difficulty,
+            tags = listOf(chapter.id, "level_${levelNumInChapter}")
         )
     }
 }

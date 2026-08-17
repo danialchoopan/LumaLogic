@@ -140,6 +140,14 @@ class GameViewModel(
         }
     }
 
+    /**
+     * Loads a level by ID and initializes game state.
+     *
+     * DEVELOPER NOTE FOR FUTURE MAINTAINERS:
+     * - Resets all transient session state (undo history, moves count, hints, timers).
+     * - `simulate(isInitialLoad = true)` runs light tracing so the initial laser beams
+     *   are immediately visible on screen without triggering a false victory screen.
+     */
     fun loadLevel(levelId: String? = null) {
         viewModelScope.launch {
             _uiState.value = GameUiState.Loading
@@ -159,7 +167,7 @@ class GameViewModel(
                 val level = getLevelUseCase(levelId)
                 AppContainer.levelProgressManager.recordAttempt(level.levelId)
                 AppContainer.gameEngine.loadLevel(level)
-                simulate()
+                simulate(isInitialLoad = true)
                 startTimer()
             } catch (e: Exception) {
                 _uiState.value = GameUiState.Error(e.message ?: "Failed to load level")
@@ -180,7 +188,16 @@ class GameViewModel(
         AppContainer.audioManager.playButtonClick()
     }
 
-    fun simulate() {
+    /**
+     * Core Simulation Loop:
+     * Executes ray-tracing across the grid, computes energy consumption,
+     * updates reactive StateFlows for Compose rendering, and evaluates win/loss states.
+     *
+     * DEVELOPER NOTE:
+     * - `isInitialLoad` prevents auto-win popups from firing instantly on initial frame.
+     * - Win state is triggered only when all required targets are satisfied and user has engaged.
+     */
+    fun simulate(isInitialLoad: Boolean = false) {
         val traceResult = updateSimulationUseCase()
         val grid = AppContainer.gameEngine.getGrid()
 
@@ -200,8 +217,9 @@ class GameViewModel(
             _uiState.value = currentState.copy(cells = grid)
         }
 
-        // Check Win state
-        if (traceResult.success && !_isWin.value && !_isCelebrating.value) {
+        // Check Win state: Puzzle targets satisfied (guarded against zero-move initial load)
+        val canTriggerWin = !isInitialLoad || _movesCount.value > 0
+        if (traceResult.success && canTriggerWin && !_isWin.value && !_isCelebrating.value) {
             _isCelebrating.value = true
             timerJob?.cancel() // Stop timer immediately on victory
 
