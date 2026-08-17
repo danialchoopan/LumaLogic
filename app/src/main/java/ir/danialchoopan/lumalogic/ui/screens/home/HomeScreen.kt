@@ -254,9 +254,9 @@ fun HomeScreen(
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
                                     text = if (hasStarted) {
-                                        if (loc.isPersian) "ادامه بازی" else "CONTINUE GAME"
+                                        if (loc.isPersian) "ادامه بازی" else "CONTINUE PLAYING"
                                     } else {
-                                        if (loc.isPersian) "شروع بازی" else "START GAME"
+                                        if (loc.isPersian) "شروع بازی" else "START PLAYING"
                                     },
                                     fontSize = 20.sp,
                                     fontWeight = FontWeight.Black,
@@ -360,7 +360,7 @@ fun HomeScreen(
                             Column {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text(
-                                        text = if (loc.isPersian) "دیدن مرحله‌ها و فصل‌ها" else "VIEW ALL LEVELS",
+                                        text = if (loc.isPersian) "دیدن مرحله‌ها" else "LEVEL MENU",
                                         fontSize = 16.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = MaterialTheme.colorScheme.onSurface

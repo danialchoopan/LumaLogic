@@ -117,4 +117,30 @@ class LevelAuditTest {
             assertNotNull("Stop reason for ${level.levelId} must be defined", result.stoppedReason)
         }
     }
+
+    /**
+     * Audit 6: Ensures that NONE of the 256 handcrafted levels auto-complete upon loading.
+     * Every level board MUST start with all required targets deactivated.
+     */
+    @Test
+    fun `audit 6 verify all 256 levels start in strictly unsolved state on initial load`() {
+        val allLevels = levelRepository.getBuiltInLevels()
+        val autoSolvedLevels = mutableListOf<String>()
+
+        for (level in allLevels) {
+            val result = gridEngine.traceLight(
+                rows = level.rows,
+                columns = level.columns,
+                cells = level.cells,
+                energyConfig = level.energyConfig
+            )
+            if (result.success) {
+                autoSolvedLevels.add("${level.levelId} (${level.name})")
+            }
+        }
+        org.junit.Assert.assertTrue(
+            "The following levels were auto-solved on load: ${autoSolvedLevels.joinToString()}",
+            autoSolvedLevels.isEmpty()
+        )
+    }
 }

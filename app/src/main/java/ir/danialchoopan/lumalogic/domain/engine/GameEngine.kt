@@ -58,14 +58,17 @@ class GameEngine {
         return traceResult
     }
 
+    /**
+     * Resets the active puzzle board to its initial level configuration.
+     *
+     * DEVELOPER NOTE:
+     * - Must restore `level.cells` directly to preserve the handcrafted scrambled initial state.
+     * - DO NOT force `Rotation.ZERO` as that would inadvertently solve puzzles where ZERO is the solution.
+     */
     fun reset(): List<Cell> {
         currentLevel?.let { level ->
             activeCells = level.cells.map { cell ->
-                if (!cell.isLocked) {
-                    cell.copy(rotation = Rotation.ZERO, isLit = false)
-                } else {
-                    cell
-                }
+                cell.copy(isLit = false)
             }.toMutableList()
             simulate()
         }

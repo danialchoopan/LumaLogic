@@ -799,21 +799,28 @@ object LevelRegistry {
 
         // ---------------------------------------------------------------------
         // ANTI-AUTO-SOLVE VERIFICATION & SCRAMBLE ENFORCEMENT:
-        // Test trace the initial board. If it solves itself on load, perturb unlocked
-        // pieces until the initial state is strictly UNSOLVED!
+        // Test trace the initial board. If the beam solves the puzzle on load,
+        // iteratively rotate individual unlocked pieces by 90 degrees until the initial
+        // state is strictly and guaranteed to be UNSOLVED!
         // ---------------------------------------------------------------------
         val gridEngine = GridEngine()
         var initialTrace = gridEngine.traceLight(rows, cols, cellList, energyConfig)
         var perturbationCount = 0
 
-        while (initialTrace.success && perturbationCount < 4) {
+        while (initialTrace.success && perturbationCount < 12) {
             perturbationCount++
-            cellList = cellList.map { cell ->
-                if (!cell.isLocked && cell.type != CellType.EMPTY) {
-                    cell.copy(rotation = cell.rotation.next())
-                } else {
-                    cell
+            val unlockedPieces = cellList.filter { !it.isLocked && it.type != CellType.EMPTY }
+            if (unlockedPieces.isNotEmpty()) {
+                val targetPiece = unlockedPieces[(perturbationCount - 1) % unlockedPieces.size]
+                cellList = cellList.map { cell ->
+                    if (cell.id == targetPiece.id) {
+                        cell.copy(rotation = cell.rotation.next())
+                    } else {
+                        cell
+                    }
                 }
+            } else {
+                break
             }
             initialTrace = gridEngine.traceLight(rows, cols, cellList, energyConfig)
         }

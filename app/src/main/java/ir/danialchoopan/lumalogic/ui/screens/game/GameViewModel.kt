@@ -217,8 +217,14 @@ class GameViewModel(
             _uiState.value = currentState.copy(cells = grid)
         }
 
-        // Check Win state: Puzzle targets satisfied (guarded against zero-move initial load)
-        val canTriggerWin = !isInitialLoad || _movesCount.value > 0
+        // =========================================================================
+        // WIN CONDITION EVALUATION:
+        // DEVELOPER NOTE:
+        // A puzzle can ONLY be won if the player has actively interacted with the board
+        // (i.e. `_movesCount.value > 0`) and it is not an initial setup or level load call.
+        // This completely prevents premature auto-win transitions on level open or frame render.
+        // =========================================================================
+        val canTriggerWin = !isInitialLoad && _movesCount.value > 0
         if (traceResult.success && canTriggerWin && !_isWin.value && !_isCelebrating.value) {
             _isCelebrating.value = true
             timerJob?.cancel() // Stop timer immediately on victory
