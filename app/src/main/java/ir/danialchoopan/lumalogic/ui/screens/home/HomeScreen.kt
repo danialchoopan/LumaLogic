@@ -1,6 +1,11 @@
 package ir.danialchoopan.lumalogic.ui.screens.home
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
@@ -104,6 +109,27 @@ fun HomeScreen(
         LevelRegistry.chapters.find { it.id == chapterId } ?: LevelRegistry.chapters.first()
     }
 
+    // Animated light beam rotation
+    val infiniteTransition = rememberInfiniteTransition(label = "home_bg")
+    val beamRotation by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(20000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "beam_rotation"
+    )
+    val pulseAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.08f,
+        targetValue = 0.18f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2000),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "pulse_alpha"
+    )
+
     LaunchedEffect(Unit) {
         isVisible = true
     }
@@ -114,19 +140,62 @@ fun HomeScreen(
             .background(MaterialTheme.colorScheme.background)
             .testTag("home_screen")
     ) {
-        // Ambient background glow
+        // Ambient background glow with animated light beams
         Canvas(modifier = Modifier.fillMaxSize()) {
             val width = size.width
             val height = size.height
 
+            // Main radial glow
             drawCircle(
                 brush = Brush.radialGradient(
                     colors = listOf(
-                        AmberPrimary.copy(alpha = 0.14f),
+                        AmberPrimary.copy(alpha = pulseAlpha),
                         Color.Transparent
                     ),
                     center = Offset(width / 2f, height * 0.22f),
                     radius = width * 0.75f
+                )
+            )
+            
+            // Animated rotating light beam 1
+            val beam1X = width * 0.5f + kotlin.math.cos(Math.toRadians(beamRotation.toDouble())).toFloat() * width * 0.4f
+            val beam1Y = height * 0.3f + kotlin.math.sin(Math.toRadians(beamRotation.toDouble())).toFloat() * height * 0.2f
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(
+                        Color(0xFF00BCD4).copy(alpha = 0.06f),
+                        Color.Transparent
+                    ),
+                    center = Offset(beam1X, beam1Y),
+                    radius = width * 0.3f
+                )
+            )
+            
+            // Animated rotating light beam 2
+            val beam2X = width * 0.5f + kotlin.math.cos(Math.toRadians((beamRotation + 120).toDouble())).toFloat() * width * 0.35f
+            val beam2Y = height * 0.4f + kotlin.math.sin(Math.toRadians((beamRotation + 120).toDouble())).toFloat() * height * 0.25f
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(
+                        Color(0xFF00E676).copy(alpha = 0.05f),
+                        Color.Transparent
+                    ),
+                    center = Offset(beam2X, beam2Y),
+                    radius = width * 0.25f
+                )
+            )
+            
+            // Animated rotating light beam 3
+            val beam3X = width * 0.5f + kotlin.math.cos(Math.toRadians((beamRotation + 240).toDouble())).toFloat() * width * 0.3f
+            val beam3Y = height * 0.5f + kotlin.math.sin(Math.toRadians((beamRotation + 240).toDouble())).toFloat() * height * 0.2f
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(
+                        Color(0xFFFF4081).copy(alpha = 0.04f),
+                        Color.Transparent
+                    ),
+                    center = Offset(beam3X, beam3Y),
+                    radius = width * 0.2f
                 )
             )
         }
@@ -155,23 +224,56 @@ fun HomeScreen(
                     ) {
                         Canvas(modifier = Modifier.fillMaxSize()) {
                             val center = Offset(size.width / 2f, size.height / 2f)
+                            // Outer glow ring
+                            drawCircle(
+                                color = AmberPrimary.copy(alpha = 0.15f),
+                                radius = size.width / 2.2f,
+                                center = center
+                            )
+                            // Main light source
                             drawCircle(
                                 color = AmberPrimary,
                                 radius = size.width / 3.4f,
                                 center = center
                             )
+                            // Inner bright core
+                            drawCircle(
+                                color = Color.White,
+                                radius = size.width / 6f,
+                                center = center
+                            )
+                            // Light beam 1 (cyan)
                             drawLine(
                                 color = Color.Cyan,
                                 start = Offset(0f, size.height * 0.3f),
                                 end = center,
                                 strokeWidth = 7f
                             )
+                            // Light beam 2 (green)
                             drawLine(
                                 color = Color(0xFF00E676),
                                 start = center,
                                 end = Offset(size.width, size.height * 0.8f),
                                 strokeWidth = 7f
                             )
+                            // Light beam 3 (pink)
+                            drawLine(
+                                color = Color(0xFFFF4081),
+                                start = Offset(size.width * 0.2f, size.height),
+                                end = center,
+                                strokeWidth = 5f
+                            )
+                            // Light beam 4 (yellow)
+                            drawLine(
+                                color = Color(0xFFFFEB3B),
+                                start = center,
+                                end = Offset(size.width * 0.8f, 0f),
+                                strokeWidth = 5f
+                            )
+                            // Sparkle dots
+                            drawCircle(color = Color.White, radius = 3f, center = Offset(size.width * 0.2f, size.height * 0.2f))
+                            drawCircle(color = Color.White, radius = 2f, center = Offset(size.width * 0.8f, size.height * 0.3f))
+                            drawCircle(color = Color.White, radius = 2f, center = Offset(size.width * 0.3f, size.height * 0.8f))
                         }
                     }
 
